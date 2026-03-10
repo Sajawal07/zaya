@@ -1,0 +1,575 @@
+[
+  {
+    "question": "What is a normal menstrual cycle length?",
+    "answer": "A normal menstrual cycle usually ranges from 21 to 35 days in adults. Some variation is normal."
+  },
+  {
+    "question": "Is it normal to have irregular periods?",
+    "answer": "Occasional irregular periods can happen due to stress, weight changes, or hormonal shifts. Frequent irregularity should be discussed with a doctor."
+  },
+  {
+    "question": "What are common PMS symptoms?",
+    "answer": "Common PMS symptoms include mood swings, bloating, breast tenderness, fatigue, and mild cramps before periods."
+  },
+  {
+    "question": "How can I reduce period cramps?",
+    "answer": "Warm compresses, light exercise, hydration, and over-the-counter pain relief may help reduce cramps."
+  },
+  {
+    "question": "When should I see a doctor for period pain?",
+    "answer": "If pain is severe, stops daily activities, or does not improve with basic care, it is best to consult a doctor."
+  },
+  {
+    "question": "What is PCOS?",
+    "answer": "PCOS, or Polycystic Ovary Syndrome, is a hormonal condition that can cause irregular periods, acne, weight gain, and difficulty with ovulation."
+  },
+  {
+    "question": "Can thin women have PCOS?",
+    "answer": "Yes, PCOS can affect women of any body type, including those who are thin."
+  },
+  {
+    "question": "What are common PCOS symptoms?",
+    "answer": "Common symptoms include irregular periods, acne, excess facial hair, weight gain, and difficulty getting pregnant."
+  },
+  {
+    "question": "Can PCOS be cured?",
+    "answer": "PCOS cannot be permanently cured, but symptoms can often be managed through lifestyle changes and medical care."
+  },
+  {
+    "question": "What diet is good for PCOS?",
+    "answer": "A balanced diet with whole grains, vegetables, lean protein, and healthy fats is often recommended for PCOS."
+  },
+
+  {
+    "question": "Is exercise helpful for PCOS?",
+    "answer": "Regular exercise can help manage weight, improve insulin sensitivity, and reduce PCOS symptoms."
+  },
+  {
+    "question": "Can stress affect my period?",
+    "answer": "Yes, high stress levels can delay or disrupt your menstrual cycle."
+  },
+  {
+    "question": "What is ovulation?",
+    "answer": "Ovulation is when the ovary releases an egg, usually around the middle of the menstrual cycle."
+  },
+  {
+    "question": "How long does a period usually last?",
+    "answer": "Most periods last between 3 to 7 days."
+  },
+  {
+    "question": "Is brown period blood normal?",
+    "answer": "Yes, brown blood usually means older blood leaving the body and is generally normal."
+  },
+  {
+    "question": "What causes missed periods?",
+    "answer": "Missed periods can be caused by stress, weight changes, hormonal imbalances, pregnancy, or certain medical conditions."
+  },
+  {
+    "question": "Can diet affect menstrual cycles?",
+    "answer": "Yes, poor nutrition or sudden weight changes can affect hormone levels and menstrual cycles."
+  },
+  {
+    "question": "What foods help during periods?",
+    "answer": "Iron-rich foods, leafy greens, fruits, nuts, and warm meals can help support energy and reduce discomfort."
+  },
+  {
+    "question": "Is it safe to exercise during periods?",
+    "answer": "Yes, light to moderate exercise is safe and may even help reduce cramps."
+  },
+  {
+    "question": "What is spotting?",
+    "answer": "Spotting is light bleeding between periods and can have various causes, including hormonal changes."
+  },
+
+  {
+    "question": "What is a healthy pregnancy diet?",
+    "answer": "A healthy pregnancy diet includes fruits, vegetables, whole grains, protein, dairy, and plenty of water."
+  },
+  {
+    "question": "How much water should a pregnant woman drink?",
+    "answer": "Most pregnant women are advised to drink around 8 to 10 glasses of water per day."
+  },
+  {
+    "question": "Is nausea normal in early pregnancy?",
+    "answer": "Yes, nausea is common in early pregnancy and is often called morning sickness."
+  },
+  {
+    "question": "When does morning sickness usually start?",
+    "answer": "Morning sickness usually starts around the 6th week of pregnancy."
+  },
+  {
+    "question": "When does morning sickness go away?",
+    "answer": "It often improves after the first trimester, around weeks 12 to 14."
+  },
+  {
+    "question": "Is light exercise safe during pregnancy?",
+    "answer": "Yes, light exercise like walking or prenatal yoga is generally safe for most pregnancies."
+  },
+  {
+    "question": "What are early signs of pregnancy?",
+    "answer": "Common early signs include missed periods, nausea, fatigue, and breast tenderness."
+  },
+  {
+    "question": "Can I travel during pregnancy?",
+    "answer": "Travel is usually safe during early and mid-pregnancy, but it is best to consult a doctor."
+  },
+  {
+    "question": "Is it normal to feel tired during pregnancy?",
+    "answer": "Yes, fatigue is very common, especially in the first and third trimesters."
+  },
+  {
+    "question": "How much weight gain is normal in pregnancy?",
+    "answer": "Weight gain depends on your starting weight, but many women gain around 11 to 16 kilograms during pregnancy."
+  },
+
+  {
+    "question": "Can I drink coffee during pregnancy?",
+    "answer": "Small amounts of caffeine are usually safe, but it is best to limit intake to recommended levels."
+  },
+  {
+    "question": "What foods should be avoided during pregnancy?",
+    "answer": "Avoid raw or undercooked meats, unpasteurized dairy, and high-mercury fish."
+  },
+  {
+    "question": "Is back pain normal during pregnancy?",
+    "answer": "Yes, back pain is common due to weight changes and posture shifts."
+  },
+  {
+    "question": "How can I sleep better during pregnancy?",
+    "answer": "Sleeping on your side with a pillow between your legs may improve comfort."
+  },
+  {
+    "question": "Is swelling normal in pregnancy?",
+    "answer": "Mild swelling in feet and hands is common, especially later in pregnancy."
+  },
+  {
+    "question": "What is the first trimester?",
+    "answer": "The first trimester is the first 12 weeks of pregnancy."
+  },
+  {
+    "question": "What is the second trimester?",
+    "answer": "The second trimester covers weeks 13 to 27 of pregnancy."
+  },
+  {
+    "question": "What is the third trimester?",
+    "answer": "The third trimester is from week 28 until birth."
+  },
+  {
+    "question": "When can I feel the baby move?",
+    "answer": "Many women feel movement between 18 and 22 weeks."
+  },
+  {
+    "question": "What is prenatal care?",
+    "answer": "Prenatal care includes regular checkups to monitor the health of the mother and baby."
+  },
+
+  {
+    "question": "How often should I visit the doctor during pregnancy?",
+    "answer": "Visits are usually monthly at first, then more frequent near the due date."
+  },
+  {
+    "question": "What are pregnancy cravings?",
+    "answer": "Cravings are strong desires for certain foods and are common during pregnancy."
+  },
+  {
+    "question": "Is it normal to have mood swings during pregnancy?",
+    "answer": "Yes, hormonal changes can cause mood swings."
+  },
+  {
+    "question": "Can I take vitamins during pregnancy?",
+    "answer": "Prenatal vitamins are commonly recommended, but they should be taken as advised by a doctor."
+  },
+  {
+    "question": "What is folic acid?",
+    "answer": "Folic acid is a vitamin that helps prevent certain birth defects and is important during early pregnancy."
+  },
+  {
+    "question": "Is heartburn normal in pregnancy?",
+    "answer": "Yes, heartburn is common due to hormonal and physical changes."
+  },
+  {
+    "question": "What is gestational diabetes?",
+    "answer": "Gestational diabetes is high blood sugar that develops during pregnancy."
+  },
+  {
+    "question": "Can I sleep on my back during pregnancy?",
+    "answer": "After mid-pregnancy, sleeping on your side is usually recommended."
+  },
+  {
+    "question": "Is walking good during pregnancy?",
+    "answer": "Yes, walking is one of the safest and most beneficial exercises during pregnancy."
+  },
+  {
+    "question": "How much rest is needed during pregnancy?",
+    "answer": "Adequate sleep and regular rest are important for a healthy pregnancy."
+  },
+
+  {
+    "question": "What causes acne during periods?",
+    "answer": "Hormonal changes before periods can increase oil production and cause acne."
+  },
+  {
+    "question": "Can dehydration affect periods?",
+    "answer": "Yes, dehydration may worsen cramps and fatigue."
+  },
+  {
+    "question": "Is it normal to have headaches during periods?",
+    "answer": "Yes, hormonal changes can cause headaches around the menstrual cycle."
+  },
+  {
+    "question": "What is ovulation pain?",
+    "answer": "Some women feel mild pain during ovulation, usually on one side of the lower abdomen."
+  },
+  {
+    "question": "Can lack of sleep affect hormones?",
+    "answer": "Yes, poor sleep can disrupt hormone balance and menstrual cycles."
+  },
+  {
+    "question": "Is it normal to feel emotional before periods?",
+    "answer": "Yes, mood changes are a common part of PMS."
+  },
+  {
+    "question": "What is a balanced diet?",
+    "answer": "A balanced diet includes carbohydrates, protein, healthy fats, vitamins, and minerals."
+  },
+  {
+    "question": "How much exercise is recommended weekly?",
+    "answer": "Most adults are advised to do at least 150 minutes of moderate exercise per week."
+  },
+  {
+    "question": "Can sugar affect PCOS symptoms?",
+    "answer": "High sugar intake may worsen insulin resistance in PCOS."
+  },
+  {
+    "question": "Are whole grains good for hormonal health?",
+    "answer": "Yes, whole grains provide fiber and help maintain stable blood sugar levels."
+  },
+
+  {
+    "question": "Is green tea good for PCOS?",
+    "answer": "Green tea may support metabolism and overall health when consumed in moderation."
+  },
+  {
+    "question": "Can weight loss improve PCOS symptoms?",
+    "answer": "Even small weight loss may improve symptoms and hormone balance."
+  },
+  {
+    "question": "Is yoga helpful for hormonal balance?",
+    "answer": "Yoga may help reduce stress and support overall hormonal health."
+  },
+  {
+    "question": "What are healthy snack options?",
+    "answer": "Nuts, fruits, yogurt, and boiled eggs are healthy snack choices."
+  },
+  {
+    "question": "Is it normal to feel hungry more often during pregnancy?",
+    "answer": "Yes, increased hunger is common due to higher energy needs."
+  },
+  {
+    "question": "Can I eat spicy food during pregnancy?",
+    "answer": "Spicy food is usually safe unless it causes discomfort like heartburn."
+  },
+  {
+    "question": "What causes leg cramps in pregnancy?",
+    "answer": "Leg cramps may be caused by changes in circulation or mineral levels."
+  },
+  {
+    "question": "How can I reduce leg cramps in pregnancy?",
+    "answer": "Gentle stretching, hydration, and proper nutrition may help."
+  },
+  {
+    "question": "Is it safe to take hot baths during pregnancy?",
+    "answer": "Warm baths are usually safe, but very hot water should be avoided."
+  },
+  {
+    "question": "What is postpartum recovery?",
+    "answer": "Postpartum recovery is the period after childbirth when the body heals and adjusts."
+  },
+    {
+      "question": "Can periods change with age?",
+      "answer": "Yes, menstrual cycles can change over time due to age, hormones, and lifestyle factors."
+    },
+    {
+      "question": "Is it normal to skip a period once in a while?",
+      "answer": "Occasionally skipping a period can happen due to stress, illness, or lifestyle changes."
+    },
+    {
+      "question": "What causes heavy periods?",
+      "answer": "Heavy periods can be caused by hormonal imbalances, fibroids, or other medical conditions."
+    },
+    {
+      "question": "When is a period considered heavy?",
+      "answer": "A period is considered heavy if you need to change protection every 1 to 2 hours or it lasts longer than 7 days."
+    },
+    {
+      "question": "Can thyroid issues affect periods?",
+      "answer": "Yes, thyroid problems can disrupt hormone balance and affect menstrual cycles."
+    },
+    {
+      "question": "Is it normal to have clots during periods?",
+      "answer": "Small clots during heavy flow days can be normal, but very large or frequent clots should be discussed with a doctor."
+    },
+    {
+      "question": "Can birth control regulate periods?",
+      "answer": "Yes, some types of birth control are used to regulate menstrual cycles."
+    },
+    {
+      "question": "What is hormonal imbalance?",
+      "answer": "Hormonal imbalance occurs when there is too much or too little of certain hormones in the body."
+    },
+    {
+      "question": "Can poor diet affect fertility?",
+      "answer": "Yes, poor nutrition can affect hormone balance and reproductive health."
+    },
+    {
+      "question": "Is it normal to feel bloated before periods?",
+      "answer": "Yes, bloating is a common symptom before menstruation."
+    },
+
+    {
+      "question": "Can caffeine worsen period symptoms?",
+      "answer": "In some people, caffeine may increase anxiety, breast tenderness, or cramps."
+    },
+    {
+      "question": "Is dark chocolate good during periods?",
+      "answer": "Dark chocolate contains magnesium, which may help reduce cramps and improve mood."
+    },
+    {
+      "question": "Can anemia affect periods?",
+      "answer": "Yes, heavy periods can lead to anemia, and anemia may cause fatigue and weakness."
+    },
+    {
+      "question": "What are signs of low iron?",
+      "answer": "Common signs include fatigue, dizziness, pale skin, and shortness of breath."
+    },
+    {
+      "question": "Can I swim during my period?",
+      "answer": "Yes, swimming is safe during your period when using appropriate protection."
+    },
+    {
+      "question": "Is it safe to use a heating pad for cramps?",
+      "answer": "Yes, a heating pad can help relax muscles and reduce menstrual pain."
+    },
+    {
+      "question": "What is endometriosis?",
+      "answer": "Endometriosis is a condition where tissue similar to the uterine lining grows outside the uterus."
+    },
+    {
+      "question": "What are signs of ovulation?",
+      "answer": "Signs may include mild pelvic pain, increased cervical mucus, and slight temperature rise."
+    },
+    {
+      "question": "Can irregular sleep affect periods?",
+      "answer": "Yes, poor or irregular sleep can disrupt hormone balance."
+    },
+    {
+      "question": "Is it normal to have no symptoms before periods?",
+      "answer": "Yes, some women have very mild or no noticeable premenstrual symptoms."
+    },
+
+    {
+      "question": "What is a missed miscarriage?",
+      "answer": "A missed miscarriage is when pregnancy loss occurs without immediate symptoms."
+    },
+    {
+      "question": "What is a due date?",
+      "answer": "A due date is the estimated date when the baby is expected to be born."
+    },
+    {
+      "question": "How long is a full-term pregnancy?",
+      "answer": "A full-term pregnancy usually lasts around 40 weeks."
+    },
+    {
+      "question": "Can I dye my hair during pregnancy?",
+      "answer": "Many experts consider it safe after the first trimester, but it is best to consult a doctor."
+    },
+    {
+      "question": "Is it safe to use skincare products during pregnancy?",
+      "answer": "Some ingredients should be avoided, so it is best to check labels and consult a doctor."
+    },
+    {
+      "question": "Can I sleep on my stomach in early pregnancy?",
+      "answer": "In early pregnancy, it is usually safe, but comfort may change as the belly grows."
+    },
+    {
+      "question": "What is the placenta?",
+      "answer": "The placenta is an organ that provides nutrients and oxygen to the baby during pregnancy."
+    },
+    {
+      "question": "What is amniotic fluid?",
+      "answer": "Amniotic fluid surrounds and protects the baby inside the uterus."
+    },
+    {
+      "question": "What causes stretch marks in pregnancy?",
+      "answer": "Stretch marks occur due to skin stretching and hormonal changes."
+    },
+    {
+      "question": "Can stretch marks be prevented?",
+      "answer": "Keeping the skin moisturized may help, but stretch marks are common and not always preventable."
+    },
+
+    {
+      "question": "Is it normal to have frequent urination in pregnancy?",
+      "answer": "Yes, hormonal changes and pressure on the bladder can cause frequent urination."
+    },
+    {
+      "question": "What is round ligament pain?",
+      "answer": "It is a common pregnancy discomfort caused by stretching of ligaments supporting the uterus."
+    },
+    {
+      "question": "Can I lift heavy objects during pregnancy?",
+      "answer": "Heavy lifting is generally not recommended, especially in later pregnancy."
+    },
+    {
+      "question": "Is it normal to have vivid dreams during pregnancy?",
+      "answer": "Yes, hormonal and emotional changes can lead to vivid dreams."
+    },
+    {
+      "question": "What is colostrum?",
+      "answer": "Colostrum is the first milk produced by the breasts before regular milk comes in."
+    },
+    {
+      "question": "When do breasts start producing milk?",
+      "answer": "Milk production usually increases after childbirth."
+    },
+    {
+      "question": "Can I eat eggs during pregnancy?",
+      "answer": "Yes, fully cooked eggs are safe and provide important nutrients."
+    },
+    {
+      "question": "Is it safe to eat fish during pregnancy?",
+      "answer": "Low-mercury fish is generally safe and provides important nutrients."
+    },
+    {
+      "question": "What is a prenatal ultrasound?",
+      "answer": "It is an imaging test used to monitor the baby’s development."
+    },
+    {
+      "question": "When is the first ultrasound usually done?",
+      "answer": "The first ultrasound is often done between 6 and 12 weeks of pregnancy."
+    },
+
+    {
+      "question": "What causes constipation during pregnancy?",
+      "answer": "Hormonal changes and iron supplements can slow digestion."
+    },
+    {
+      "question": "How can I reduce constipation in pregnancy?",
+      "answer": "Eating fiber-rich foods, drinking water, and staying active may help."
+    },
+    {
+      "question": "Is it normal to feel short of breath in pregnancy?",
+      "answer": "Mild shortness of breath is common as the body adapts to pregnancy."
+    },
+    {
+      "question": "What is a birth plan?",
+      "answer": "A birth plan is a document that outlines preferences for labor and delivery."
+    },
+    {
+      "question": "What is labor?",
+      "answer": "Labor is the process of childbirth when the uterus contracts to deliver the baby."
+    },
+    {
+      "question": "What are contractions?",
+      "answer": "Contractions are tightening and relaxing of the uterine muscles during labor."
+    },
+    {
+      "question": "What is the mucus plug?",
+      "answer": "It is a thick mucus that blocks the cervix during pregnancy."
+    },
+    {
+      "question": "What does it mean when water breaks?",
+      "answer": "It means the amniotic sac has ruptured, which can be a sign that labor is starting."
+    },
+    {
+      "question": "Is walking helpful during early labor?",
+      "answer": "Yes, gentle walking may help labor progress in some cases."
+    },
+    {
+      "question": "What is a cesarean section?",
+      "answer": "A cesarean section is a surgical procedure used to deliver a baby."
+    },
+
+    {
+      "question": "How long does postpartum bleeding last?",
+      "answer": "Postpartum bleeding usually lasts a few weeks after childbirth."
+    },
+    {
+      "question": "Is mood change normal after childbirth?",
+      "answer": "Yes, mood swings are common due to hormonal and lifestyle changes."
+    },
+    {
+      "question": "What is the baby blues?",
+      "answer": "Baby blues are mild mood changes that happen shortly after childbirth."
+    },
+    {
+      "question": "What is postpartum depression?",
+      "answer": "It is a more serious mood disorder that can occur after childbirth and may need medical care."
+    },
+    {
+      "question": "When does the first period return after childbirth?",
+      "answer": "It varies, but periods may return within a few months, especially if not breastfeeding."
+    },
+    {
+      "question": "Can breastfeeding delay periods?",
+      "answer": "Yes, breastfeeding can delay the return of menstrual cycles."
+    },
+    {
+      "question": "What is a healthy breakfast for hormonal balance?",
+      "answer": "A healthy breakfast may include protein, whole grains, and fruits."
+    },
+    {
+      "question": "Can skipping meals affect hormones?",
+      "answer": "Yes, irregular eating patterns may affect blood sugar and hormone balance."
+    },
+    {
+      "question": "Are nuts good for hormonal health?",
+      "answer": "Yes, nuts contain healthy fats and nutrients that support overall health."
+    },
+    {
+      "question": "Is walking daily good for PCOS?",
+      "answer": "Yes, daily walking can support weight management and insulin sensitivity."
+    },
+
+    {
+      "question": "Can dehydration cause headaches during pregnancy?",
+      "answer": "Yes, not drinking enough water can lead to headaches."
+    },
+    {
+      "question": "What are healthy drinks during pregnancy?",
+      "answer": "Water, milk, and natural fruit juices in moderation are healthy choices."
+    },
+    {
+      "question": "Can I fast during pregnancy?",
+      "answer": "Fasting during pregnancy should only be done after consulting a doctor."
+    },
+    {
+      "question": "Is it normal to feel hot during pregnancy?",
+      "answer": "Yes, increased blood flow and hormones can make you feel warmer."
+    },
+    {
+      "question": "Can PCOS affect fertility?",
+      "answer": "Yes, PCOS can affect ovulation, but many women with PCOS can still conceive."
+    },
+    {
+      "question": "What is insulin resistance?",
+      "answer": "Insulin resistance occurs when the body does not respond properly to insulin."
+    },
+    {
+      "question": "Can walking after meals help PCOS?",
+      "answer": "Yes, light activity after meals may help control blood sugar levels."
+    },
+    {
+      "question": "Is stress management important for hormones?",
+      "answer": "Yes, reducing stress can help maintain hormonal balance."
+    },
+    {
+      "question": "Can processed foods worsen PCOS symptoms?",
+      "answer": "Highly processed foods may worsen insulin resistance and inflammation."
+    },
+    {
+      "question": "Is it normal to feel breast tenderness before periods?",
+      "answer": "Yes, breast tenderness is a common PMS symptom."
+    }
+
+]

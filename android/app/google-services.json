@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "65602568709",
+    "project_id": "zaya-wellness-2026",
+    "storage_bucket": "zaya-wellness-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65602568709:android:f13235c0037b6d9ae2126c",
+        "android_client_info": {
+          "package_name": "com.zaya.zaya"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "65602568709-evcvo8rbkvjfuoeics66sioumesb11rq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.zaya.zaya",
+            "certificate_hash": "2fa85bd3ee38fd9585e78bcb7bcb9d330aec4602"
+          }
+        },
+        {
+          "client_id": "65602568709-kocegmhen4dkbofdmlum8maboi2a4uv8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAVBgeQFCD1FhLdBYYwRKAZEzB18-y3a4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "65602568709-kocegmhen4dkbofdmlum8maboi2a4uv8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
