@@ -368,7 +368,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (aiResponse.toLowerCase().contains("i'm sorry") || aiResponse.toLowerCase().contains("couldn't process")) {
         response = "Sorry, we could not find a relevant answer at this time. Please consult a doctor for proper guidance." + disclaimer;
       } else {
-        response = aiResponse + disclaimer;
+        final lowerAi = aiResponse.toLowerCase();
+        if (lowerAi.contains("disclaimer") || lowerAi.contains("medical advice") || lowerAi.contains("consult a doctor")) {
+          response = aiResponse;
+        } else {
+          response = aiResponse + disclaimer;
+        }
       }
     }
 
