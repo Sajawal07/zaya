@@ -22,93 +22,179 @@ const UserMetricsSchema = CollectionSchema(
       name: r'acne',
       type: IsarType.bool,
     ),
-    r'anxiety': PropertySchema(
+    r'activityLevel': PropertySchema(
       id: 1,
+      name: r'activityLevel',
+      type: IsarType.string,
+    ),
+    r'age': PropertySchema(
+      id: 2,
+      name: r'age',
+      type: IsarType.long,
+    ),
+    r'anxiety': PropertySchema(
+      id: 3,
       name: r'anxiety',
       type: IsarType.bool,
     ),
     r'bmi': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'bmi',
       type: IsarType.double,
     ),
+    r'bmr': PropertySchema(
+      id: 5,
+      name: r'bmr',
+      type: IsarType.double,
+    ),
     r'brainFog': PropertySchema(
-      id: 3,
+      id: 6,
       name: r'brainFog',
       type: IsarType.bool,
     ),
+    r'dailyCalorieGoal': PropertySchema(
+      id: 7,
+      name: r'dailyCalorieGoal',
+      type: IsarType.double,
+    ),
     r'dueDate': PropertySchema(
-      id: 4,
+      id: 8,
       name: r'dueDate',
       type: IsarType.dateTime,
     ),
     r'encryptedSettings': PropertySchema(
-      id: 5,
+      id: 9,
       name: r'encryptedSettings',
       type: IsarType.string,
     ),
     r'facialHair': PropertySchema(
-      id: 6,
+      id: 10,
       name: r'facialHair',
       type: IsarType.bool,
     ),
     r'fatigue': PropertySchema(
-      id: 7,
+      id: 11,
       name: r'fatigue',
       type: IsarType.bool,
     ),
     r'hairFall': PropertySchema(
-      id: 8,
+      id: 12,
       name: r'hairFall',
       type: IsarType.bool,
     ),
+    r'hasAmenorrhea': PropertySchema(
+      id: 13,
+      name: r'hasAmenorrhea',
+      type: IsarType.bool,
+    ),
+    r'hasEndometriosis': PropertySchema(
+      id: 14,
+      name: r'hasEndometriosis',
+      type: IsarType.bool,
+    ),
+    r'hasFibroids': PropertySchema(
+      id: 15,
+      name: r'hasFibroids',
+      type: IsarType.bool,
+    ),
+    r'hasPMDD': PropertySchema(
+      id: 16,
+      name: r'hasPMDD',
+      type: IsarType.bool,
+    ),
+    r'hasThyroid': PropertySchema(
+      id: 17,
+      name: r'hasThyroid',
+      type: IsarType.bool,
+    ),
+    r'healthCategory': PropertySchema(
+      id: 18,
+      name: r'healthCategory',
+      type: IsarType.string,
+    ),
+    r'healthMode': PropertySchema(
+      id: 19,
+      name: r'healthMode',
+      type: IsarType.byte,
+      enumMap: _UserMetricshealthModeEnumValueMap,
+    ),
     r'height': PropertySchema(
-      id: 9,
+      id: 20,
       name: r'height',
       type: IsarType.double,
     ),
     r'irregularPeriods': PropertySchema(
-      id: 10,
+      id: 21,
       name: r'irregularPeriods',
       type: IsarType.bool,
     ),
+    r'isMetricsComplete': PropertySchema(
+      id: 22,
+      name: r'isMetricsComplete',
+      type: IsarType.bool,
+    ),
     r'isPregnant': PropertySchema(
-      id: 11,
+      id: 23,
       name: r'isPregnant',
       type: IsarType.bool,
     ),
+    r'isPremium': PropertySchema(
+      id: 24,
+      name: r'isPremium',
+      type: IsarType.bool,
+    ),
     r'lastPeriodDate': PropertySchema(
-      id: 12,
+      id: 25,
       name: r'lastPeriodDate',
       type: IsarType.dateTime,
     ),
     r'lastUpdated': PropertySchema(
-      id: 13,
+      id: 26,
       name: r'lastUpdated',
       type: IsarType.dateTime,
     ),
+    r'prePregnancyWeight': PropertySchema(
+      id: 27,
+      name: r'prePregnancyWeight',
+      type: IsarType.double,
+    ),
+    r'premiumExpiresAt': PropertySchema(
+      id: 28,
+      name: r'premiumExpiresAt',
+      type: IsarType.dateTime,
+    ),
     r'recentlyStoppedPill': PropertySchema(
-      id: 14,
+      id: 29,
       name: r'recentlyStoppedPill',
       type: IsarType.bool,
     ),
     r'sleepIssues': PropertySchema(
-      id: 15,
+      id: 30,
       name: r'sleepIssues',
       type: IsarType.bool,
     ),
+    r'subscriptionType': PropertySchema(
+      id: 31,
+      name: r'subscriptionType',
+      type: IsarType.string,
+    ),
     r'sugarCravings': PropertySchema(
-      id: 16,
+      id: 32,
       name: r'sugarCravings',
       type: IsarType.bool,
     ),
+    r'tdee': PropertySchema(
+      id: 33,
+      name: r'tdee',
+      type: IsarType.double,
+    ),
     r'userId': PropertySchema(
-      id: 17,
+      id: 34,
       name: r'userId',
       type: IsarType.string,
     ),
     r'weight': PropertySchema(
-      id: 18,
+      id: 35,
       name: r'weight',
       type: IsarType.double,
     )
@@ -148,7 +234,20 @@ int _userMetricsEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
+    final value = object.activityLevel;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.encryptedSettings;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  bytesCount += 3 + object.healthCategory.length * 3;
+  {
+    final value = object.subscriptionType;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -164,24 +263,41 @@ void _userMetricsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeBool(offsets[0], object.acne);
-  writer.writeBool(offsets[1], object.anxiety);
-  writer.writeDouble(offsets[2], object.bmi);
-  writer.writeBool(offsets[3], object.brainFog);
-  writer.writeDateTime(offsets[4], object.dueDate);
-  writer.writeString(offsets[5], object.encryptedSettings);
-  writer.writeBool(offsets[6], object.facialHair);
-  writer.writeBool(offsets[7], object.fatigue);
-  writer.writeBool(offsets[8], object.hairFall);
-  writer.writeDouble(offsets[9], object.height);
-  writer.writeBool(offsets[10], object.irregularPeriods);
-  writer.writeBool(offsets[11], object.isPregnant);
-  writer.writeDateTime(offsets[12], object.lastPeriodDate);
-  writer.writeDateTime(offsets[13], object.lastUpdated);
-  writer.writeBool(offsets[14], object.recentlyStoppedPill);
-  writer.writeBool(offsets[15], object.sleepIssues);
-  writer.writeBool(offsets[16], object.sugarCravings);
-  writer.writeString(offsets[17], object.userId);
-  writer.writeDouble(offsets[18], object.weight);
+  writer.writeString(offsets[1], object.activityLevel);
+  writer.writeLong(offsets[2], object.age);
+  writer.writeBool(offsets[3], object.anxiety);
+  writer.writeDouble(offsets[4], object.bmi);
+  writer.writeDouble(offsets[5], object.bmr);
+  writer.writeBool(offsets[6], object.brainFog);
+  writer.writeDouble(offsets[7], object.dailyCalorieGoal);
+  writer.writeDateTime(offsets[8], object.dueDate);
+  writer.writeString(offsets[9], object.encryptedSettings);
+  writer.writeBool(offsets[10], object.facialHair);
+  writer.writeBool(offsets[11], object.fatigue);
+  writer.writeBool(offsets[12], object.hairFall);
+  writer.writeBool(offsets[13], object.hasAmenorrhea);
+  writer.writeBool(offsets[14], object.hasEndometriosis);
+  writer.writeBool(offsets[15], object.hasFibroids);
+  writer.writeBool(offsets[16], object.hasPMDD);
+  writer.writeBool(offsets[17], object.hasThyroid);
+  writer.writeString(offsets[18], object.healthCategory);
+  writer.writeByte(offsets[19], object.healthMode.index);
+  writer.writeDouble(offsets[20], object.height);
+  writer.writeBool(offsets[21], object.irregularPeriods);
+  writer.writeBool(offsets[22], object.isMetricsComplete);
+  writer.writeBool(offsets[23], object.isPregnant);
+  writer.writeBool(offsets[24], object.isPremium);
+  writer.writeDateTime(offsets[25], object.lastPeriodDate);
+  writer.writeDateTime(offsets[26], object.lastUpdated);
+  writer.writeDouble(offsets[27], object.prePregnancyWeight);
+  writer.writeDateTime(offsets[28], object.premiumExpiresAt);
+  writer.writeBool(offsets[29], object.recentlyStoppedPill);
+  writer.writeBool(offsets[30], object.sleepIssues);
+  writer.writeString(offsets[31], object.subscriptionType);
+  writer.writeBool(offsets[32], object.sugarCravings);
+  writer.writeDouble(offsets[33], object.tdee);
+  writer.writeString(offsets[34], object.userId);
+  writer.writeDouble(offsets[35], object.weight);
 }
 
 UserMetrics _userMetricsDeserialize(
@@ -192,24 +308,38 @@ UserMetrics _userMetricsDeserialize(
 ) {
   final object = UserMetrics();
   object.acne = reader.readBool(offsets[0]);
-  object.anxiety = reader.readBool(offsets[1]);
-  object.brainFog = reader.readBool(offsets[3]);
-  object.dueDate = reader.readDateTimeOrNull(offsets[4]);
-  object.encryptedSettings = reader.readStringOrNull(offsets[5]);
-  object.facialHair = reader.readBool(offsets[6]);
-  object.fatigue = reader.readBool(offsets[7]);
-  object.hairFall = reader.readBool(offsets[8]);
-  object.height = reader.readDoubleOrNull(offsets[9]);
+  object.activityLevel = reader.readStringOrNull(offsets[1]);
+  object.age = reader.readLongOrNull(offsets[2]);
+  object.anxiety = reader.readBool(offsets[3]);
+  object.brainFog = reader.readBool(offsets[6]);
+  object.dueDate = reader.readDateTimeOrNull(offsets[8]);
+  object.encryptedSettings = reader.readStringOrNull(offsets[9]);
+  object.facialHair = reader.readBool(offsets[10]);
+  object.fatigue = reader.readBool(offsets[11]);
+  object.hairFall = reader.readBool(offsets[12]);
+  object.hasAmenorrhea = reader.readBool(offsets[13]);
+  object.hasEndometriosis = reader.readBool(offsets[14]);
+  object.hasFibroids = reader.readBool(offsets[15]);
+  object.hasPMDD = reader.readBool(offsets[16]);
+  object.hasThyroid = reader.readBool(offsets[17]);
+  object.healthMode =
+      _UserMetricshealthModeValueEnumMap[reader.readByteOrNull(offsets[19])] ??
+          HealthMode.standard;
+  object.height = reader.readDoubleOrNull(offsets[20]);
   object.id = id;
-  object.irregularPeriods = reader.readBool(offsets[10]);
-  object.isPregnant = reader.readBool(offsets[11]);
-  object.lastPeriodDate = reader.readDateTimeOrNull(offsets[12]);
-  object.lastUpdated = reader.readDateTimeOrNull(offsets[13]);
-  object.recentlyStoppedPill = reader.readBool(offsets[14]);
-  object.sleepIssues = reader.readBool(offsets[15]);
-  object.sugarCravings = reader.readBool(offsets[16]);
-  object.userId = reader.readString(offsets[17]);
-  object.weight = reader.readDoubleOrNull(offsets[18]);
+  object.irregularPeriods = reader.readBool(offsets[21]);
+  object.isPregnant = reader.readBool(offsets[23]);
+  object.isPremium = reader.readBool(offsets[24]);
+  object.lastPeriodDate = reader.readDateTimeOrNull(offsets[25]);
+  object.lastUpdated = reader.readDateTimeOrNull(offsets[26]);
+  object.prePregnancyWeight = reader.readDoubleOrNull(offsets[27]);
+  object.premiumExpiresAt = reader.readDateTimeOrNull(offsets[28]);
+  object.recentlyStoppedPill = reader.readBool(offsets[29]);
+  object.sleepIssues = reader.readBool(offsets[30]);
+  object.subscriptionType = reader.readStringOrNull(offsets[31]);
+  object.sugarCravings = reader.readBool(offsets[32]);
+  object.userId = reader.readString(offsets[34]);
+  object.weight = reader.readDoubleOrNull(offsets[35]);
   return object;
 }
 
@@ -223,31 +353,31 @@ P _userMetricsDeserializeProp<P>(
     case 0:
       return (reader.readBool(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 5:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 9:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
       return (reader.readBool(offset)) as P;
     case 11:
       return (reader.readBool(offset)) as P;
     case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 13:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 14:
       return (reader.readBool(offset)) as P;
     case 15:
@@ -255,13 +385,62 @@ P _userMetricsDeserializeProp<P>(
     case 16:
       return (reader.readBool(offset)) as P;
     case 17:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 18:
+      return (reader.readString(offset)) as P;
+    case 19:
+      return (_UserMetricshealthModeValueEnumMap[
+              reader.readByteOrNull(offset)] ??
+          HealthMode.standard) as P;
+    case 20:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 21:
+      return (reader.readBool(offset)) as P;
+    case 22:
+      return (reader.readBool(offset)) as P;
+    case 23:
+      return (reader.readBool(offset)) as P;
+    case 24:
+      return (reader.readBool(offset)) as P;
+    case 25:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 26:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 27:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 28:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 29:
+      return (reader.readBool(offset)) as P;
+    case 30:
+      return (reader.readBool(offset)) as P;
+    case 31:
+      return (reader.readStringOrNull(offset)) as P;
+    case 32:
+      return (reader.readBool(offset)) as P;
+    case 33:
+      return (reader.readDouble(offset)) as P;
+    case 34:
+      return (reader.readString(offset)) as P;
+    case 35:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _UserMetricshealthModeEnumValueMap = {
+  'standard': 0,
+  'pcos': 1,
+  'pregnancy': 2,
+  'ttc': 3,
+};
+const _UserMetricshealthModeValueEnumMap = {
+  0: HealthMode.standard,
+  1: HealthMode.pcos,
+  2: HealthMode.pregnancy,
+  3: HealthMode.ttc,
+};
 
 Id _userMetricsGetId(UserMetrics object) {
   return object.id;
@@ -466,6 +645,229 @@ extension UserMetricsQueryFilter
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'activityLevel',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'activityLevel',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'activityLevel',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'activityLevel',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'activityLevel',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'activityLevel',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      activityLevelIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'activityLevel',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'age',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'age',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'age',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> ageBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'age',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> anxietyEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
@@ -538,12 +940,140 @@ extension UserMetricsQueryFilter
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> bmrEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'bmr',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> bmrGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'bmr',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> bmrLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'bmr',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> bmrBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'bmr',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> brainFogEqualTo(
       bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'brainFog',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      dailyCalorieGoalEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dailyCalorieGoal',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      dailyCalorieGoalGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dailyCalorieGoal',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      dailyCalorieGoalLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dailyCalorieGoal',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      dailyCalorieGoalBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dailyCalorieGoal',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -804,6 +1334,248 @@ extension UserMetricsQueryFilter
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      hasAmenorrheaEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasAmenorrhea',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      hasEndometriosisEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasEndometriosis',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      hasFibroidsEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasFibroids',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> hasPMDDEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasPMDD',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      hasThyroidEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasThyroid',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'healthCategory',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'healthCategory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'healthCategory',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'healthCategory',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthCategoryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'healthCategory',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthModeEqualTo(HealthMode value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'healthMode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthModeGreaterThan(
+    HealthMode value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'healthMode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthModeLessThan(
+    HealthMode value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'healthMode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      healthModeBetween(
+    HealthMode lower,
+    HealthMode upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'healthMode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> heightIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -948,10 +1720,30 @@ extension UserMetricsQueryFilter
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      isMetricsCompleteEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isMetricsComplete',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
       isPregnantEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isPregnant',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      isPremiumEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isPremium',
         value: value,
       ));
     });
@@ -1106,6 +1898,164 @@ extension UserMetricsQueryFilter
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'prePregnancyWeight',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'prePregnancyWeight',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'prePregnancyWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'prePregnancyWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'prePregnancyWeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      prePregnancyWeightBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'prePregnancyWeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'premiumExpiresAt',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'premiumExpiresAt',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtEqualTo(DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'premiumExpiresAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'premiumExpiresAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'premiumExpiresAt',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      premiumExpiresAtBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'premiumExpiresAt',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
       recentlyStoppedPillEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -1126,11 +2076,227 @@ extension UserMetricsQueryFilter
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'subscriptionType',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'subscriptionType',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'subscriptionType',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'subscriptionType',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'subscriptionType',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'subscriptionType',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
+      subscriptionTypeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'subscriptionType',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition>
       sugarCravingsEqualTo(bool value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'sugarCravings',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> tdeeEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tdee',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> tdeeGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'tdee',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> tdeeLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'tdee',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterFilterCondition> tdeeBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'tdee',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -1370,6 +2536,31 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByActivityLevel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activityLevel', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByActivityLevelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activityLevel', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByAgeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByAnxiety() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'anxiety', Sort.asc);
@@ -1394,6 +2585,18 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByBmr() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bmr', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByBmrDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bmr', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByBrainFog() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'brainFog', Sort.asc);
@@ -1403,6 +2606,20 @@ extension UserMetricsQuerySortBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByBrainFogDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'brainFog', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByDailyCalorieGoal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dailyCalorieGoal', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByDailyCalorieGoalDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dailyCalorieGoal', Sort.desc);
     });
   }
 
@@ -1468,6 +2685,94 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasAmenorrhea() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasAmenorrhea', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByHasAmenorrheaDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasAmenorrhea', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByHasEndometriosis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasEndometriosis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByHasEndometriosisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasEndometriosis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasFibroids() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasFibroids', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasFibroidsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasFibroids', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasPMDD() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasPMDD', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasPMDDDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasPMDD', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasThyroid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasThyroid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHasThyroidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasThyroid', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHealthCategory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthCategory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByHealthCategoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthCategory', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHealthMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHealthModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByHeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'height', Sort.asc);
@@ -1494,6 +2799,20 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByIsMetricsComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMetricsComplete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByIsMetricsCompleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMetricsComplete', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByIsPregnant() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isPregnant', Sort.asc);
@@ -1503,6 +2822,18 @@ extension UserMetricsQuerySortBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByIsPregnantDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isPregnant', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByIsPremium() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPremium', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByIsPremiumDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPremium', Sort.desc);
     });
   }
 
@@ -1532,6 +2863,34 @@ extension UserMetricsQuerySortBy
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByPrePregnancyWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'prePregnancyWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByPrePregnancyWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'prePregnancyWeight', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByPremiumExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'premiumExpiresAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortByPremiumExpiresAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'premiumExpiresAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
       sortByRecentlyStoppedPill() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recentlyStoppedPill', Sort.asc);
@@ -1557,6 +2916,20 @@ extension UserMetricsQuerySortBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortBySubscriptionType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'subscriptionType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      sortBySubscriptionTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'subscriptionType', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortBySugarCravings() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sugarCravings', Sort.asc);
@@ -1567,6 +2940,18 @@ extension UserMetricsQuerySortBy
       sortBySugarCravingsDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sugarCravings', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByTdee() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tdee', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> sortByTdeeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tdee', Sort.desc);
     });
   }
 
@@ -1609,6 +2994,31 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByActivityLevel() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activityLevel', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByActivityLevelDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'activityLevel', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByAgeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'age', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByAnxiety() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'anxiety', Sort.asc);
@@ -1633,6 +3043,18 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByBmr() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bmr', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByBmrDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'bmr', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByBrainFog() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'brainFog', Sort.asc);
@@ -1642,6 +3064,20 @@ extension UserMetricsQuerySortThenBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByBrainFogDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'brainFog', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByDailyCalorieGoal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dailyCalorieGoal', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByDailyCalorieGoalDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dailyCalorieGoal', Sort.desc);
     });
   }
 
@@ -1707,6 +3143,94 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasAmenorrhea() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasAmenorrhea', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByHasAmenorrheaDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasAmenorrhea', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByHasEndometriosis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasEndometriosis', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByHasEndometriosisDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasEndometriosis', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasFibroids() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasFibroids', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasFibroidsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasFibroids', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasPMDD() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasPMDD', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasPMDDDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasPMDD', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasThyroid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasThyroid', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHasThyroidDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasThyroid', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHealthCategory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthCategory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByHealthCategoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthCategory', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHealthMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHealthModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'healthMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByHeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'height', Sort.asc);
@@ -1745,6 +3269,20 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByIsMetricsComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMetricsComplete', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByIsMetricsCompleteDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isMetricsComplete', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByIsPregnant() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isPregnant', Sort.asc);
@@ -1754,6 +3292,18 @@ extension UserMetricsQuerySortThenBy
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByIsPregnantDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isPregnant', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByIsPremium() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPremium', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByIsPremiumDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isPremium', Sort.desc);
     });
   }
 
@@ -1783,6 +3333,34 @@ extension UserMetricsQuerySortThenBy
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByPrePregnancyWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'prePregnancyWeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByPrePregnancyWeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'prePregnancyWeight', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByPremiumExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'premiumExpiresAt', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenByPremiumExpiresAtDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'premiumExpiresAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
       thenByRecentlyStoppedPill() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'recentlyStoppedPill', Sort.asc);
@@ -1808,6 +3386,20 @@ extension UserMetricsQuerySortThenBy
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenBySubscriptionType() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'subscriptionType', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy>
+      thenBySubscriptionTypeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'subscriptionType', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenBySugarCravings() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sugarCravings', Sort.asc);
@@ -1818,6 +3410,18 @@ extension UserMetricsQuerySortThenBy
       thenBySugarCravingsDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sugarCravings', Sort.desc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByTdee() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tdee', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QAfterSortBy> thenByTdeeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tdee', Sort.desc);
     });
   }
 
@@ -1854,6 +3458,20 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByActivityLevel(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'activityLevel',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByAge() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'age');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByAnxiety() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'anxiety');
@@ -1866,9 +3484,22 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByBmr() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'bmr');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByBrainFog() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'brainFog');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct>
+      distinctByDailyCalorieGoal() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dailyCalorieGoal');
     });
   }
 
@@ -1904,6 +3535,51 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHasAmenorrhea() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasAmenorrhea');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct>
+      distinctByHasEndometriosis() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasEndometriosis');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHasFibroids() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasFibroids');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHasPMDD() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasPMDD');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHasThyroid() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasThyroid');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHealthCategory(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'healthCategory',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHealthMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'healthMode');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByHeight() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'height');
@@ -1917,9 +3593,22 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct>
+      distinctByIsMetricsComplete() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isMetricsComplete');
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByIsPregnant() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isPregnant');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByIsPremium() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isPremium');
     });
   }
 
@@ -1936,6 +3625,20 @@ extension UserMetricsQueryWhereDistinct
   }
 
   QueryBuilder<UserMetrics, UserMetrics, QDistinct>
+      distinctByPrePregnancyWeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'prePregnancyWeight');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct>
+      distinctByPremiumExpiresAt() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'premiumExpiresAt');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct>
       distinctByRecentlyStoppedPill() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'recentlyStoppedPill');
@@ -1948,9 +3651,23 @@ extension UserMetricsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctBySubscriptionType(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'subscriptionType',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctBySugarCravings() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sugarCravings');
+    });
+  }
+
+  QueryBuilder<UserMetrics, UserMetrics, QDistinct> distinctByTdee() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tdee');
     });
   }
 
@@ -1982,6 +3699,18 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, String?, QQueryOperations> activityLevelProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'activityLevel');
+    });
+  }
+
+  QueryBuilder<UserMetrics, int?, QQueryOperations> ageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'age');
+    });
+  }
+
   QueryBuilder<UserMetrics, bool, QQueryOperations> anxietyProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'anxiety');
@@ -1994,9 +3723,22 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, double, QQueryOperations> bmrProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'bmr');
+    });
+  }
+
   QueryBuilder<UserMetrics, bool, QQueryOperations> brainFogProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'brainFog');
+    });
+  }
+
+  QueryBuilder<UserMetrics, double, QQueryOperations>
+      dailyCalorieGoalProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dailyCalorieGoal');
     });
   }
 
@@ -2031,6 +3773,48 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, bool, QQueryOperations> hasAmenorrheaProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasAmenorrhea');
+    });
+  }
+
+  QueryBuilder<UserMetrics, bool, QQueryOperations> hasEndometriosisProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasEndometriosis');
+    });
+  }
+
+  QueryBuilder<UserMetrics, bool, QQueryOperations> hasFibroidsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasFibroids');
+    });
+  }
+
+  QueryBuilder<UserMetrics, bool, QQueryOperations> hasPMDDProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasPMDD');
+    });
+  }
+
+  QueryBuilder<UserMetrics, bool, QQueryOperations> hasThyroidProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasThyroid');
+    });
+  }
+
+  QueryBuilder<UserMetrics, String, QQueryOperations> healthCategoryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'healthCategory');
+    });
+  }
+
+  QueryBuilder<UserMetrics, HealthMode, QQueryOperations> healthModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'healthMode');
+    });
+  }
+
   QueryBuilder<UserMetrics, double?, QQueryOperations> heightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'height');
@@ -2043,9 +3827,22 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, bool, QQueryOperations>
+      isMetricsCompleteProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isMetricsComplete');
+    });
+  }
+
   QueryBuilder<UserMetrics, bool, QQueryOperations> isPregnantProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isPregnant');
+    });
+  }
+
+  QueryBuilder<UserMetrics, bool, QQueryOperations> isPremiumProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isPremium');
     });
   }
 
@@ -2062,6 +3859,20 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, double?, QQueryOperations>
+      prePregnancyWeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'prePregnancyWeight');
+    });
+  }
+
+  QueryBuilder<UserMetrics, DateTime?, QQueryOperations>
+      premiumExpiresAtProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'premiumExpiresAt');
+    });
+  }
+
   QueryBuilder<UserMetrics, bool, QQueryOperations>
       recentlyStoppedPillProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -2075,9 +3886,22 @@ extension UserMetricsQueryProperty
     });
   }
 
+  QueryBuilder<UserMetrics, String?, QQueryOperations>
+      subscriptionTypeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'subscriptionType');
+    });
+  }
+
   QueryBuilder<UserMetrics, bool, QQueryOperations> sugarCravingsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'sugarCravings');
+    });
+  }
+
+  QueryBuilder<UserMetrics, double, QQueryOperations> tdeeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tdee');
     });
   }
 

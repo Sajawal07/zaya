@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zaya/core/app_colors.dart';
-import 'package:zaya/features/home/presentation/screens/main_layout.dart';
-import 'package:zaya/providers/auth_provider.dart';
+import 'package:hercycle_bloom/core/app_colors.dart';
+import 'package:hercycle_bloom/features/home/presentation/screens/main_layout.dart';
+import 'package:hercycle_bloom/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -31,13 +31,13 @@ class LoginScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(12.0),
                   child: Image.asset(
                     'assets/images/login.png',
-                    fit: BoxFit.contain,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
               const SizedBox(height: 32),
               Text(
-                'Welcome to Zaya',
+                'Welcome to HerCycle Bloom',
                 style: Theme.of(context).textTheme.displayMedium,
               ),
               const SizedBox(height: 12),
@@ -49,20 +49,32 @@ class LoginScreen extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Implement Google Sign In
-                  _handleGoogleSignIn(context, ref);
-                },
-                icon: Image.network(
-                  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-                  height: 24,
-                ),
-                label: const Text('Continue with Google'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.white,
-                  foregroundColor: AppColors.textPrimary,
-                  side: BorderSide(color: AppColors.nudeRose.withOpacity(0.3)),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _handleGoogleSignIn(context, ref);
+                  },
+                  icon: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Image.network(
+                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.login, size: 22),
+                    ),
+                  ),
+                  label: const Text(
+                    'Continue with Google',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.white,
+                    foregroundColor: AppColors.textPrimary,
+                    side: BorderSide(color: AppColors.nudeRose.withValues(alpha: 0.3)),
+                    minimumSize: const Size(double.infinity, 52),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  ),
                 ),
               ),
               const SizedBox(height: 48),
@@ -104,11 +116,12 @@ class LoginScreen extends ConsumerWidget {
         return;
       }
 
+      // Success - navigate to MainLayout, clearing the entire navigation stack
       if (!context.mounted) return;
-
-      // Success - navigate to MainLayout
-      Navigator.of(context).pushReplacement(
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
       );
     } catch (e) {
       if (!context.mounted) return;

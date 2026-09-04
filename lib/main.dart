@@ -2,57 +2,94 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'core/app_theme.dart';
+import 'core/navigator_key.dart';
 import 'features/auth/presentation/screens/onboarding_screen.dart';
 import 'features/home/presentation/screens/main_layout.dart';
 import 'services/notification_service.dart';
+import 'shared/widgets/splash_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Do not preserve native splash — dismiss on first Flutter frame (custom SplashScreen).
+  FlutterNativeSplash.remove();
 
-  // Initialize Notifications
-  await NotificationService.initialize();
-  
   runApp(
     const ProviderScope(
-      child: ZayaApp(),
+      child: HerCycleBloomApp(),
     ),
   );
 }
 
-class ZayaApp extends StatelessWidget {
-  const ZayaApp({super.key});
+class HerCycleBloomApp extends StatefulWidget {
+  const HerCycleBloomApp({super.key});
+
+  @override
+  State<HerCycleBloomApp> createState() => _HerCycleBloomAppState();
+}
+
+class _HerCycleBloomAppState extends State<HerCycleBloomApp> {
+  /// True once Firebase / services are ready AND min splash time elapsed.
+  bool _bootstrapped = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    // Keep branded splash visible for a beat even if init is fast.
+    final minSplash = Future<void>.delayed(const Duration(milliseconds: 1800));
+    final init = _initializeApp();
+    await Future.wait([minSplash, init]);
+    if (mounted) {
+      setState(() => _bootstrapped = true);
+    }
+  }
+
+  Future<void> _initializeApp() async {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await NotificationService.initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Zaya Wellness',
+      navigatorKey: navigatorKey,
+      title: 'HerCycle Bloom',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-          
-          if (snapshot.hasData && snapshot.data != null) {
-            return const MainLayout();
-          }
-          
-          return const OnboardingScreen();
-        },
-      ),
+      home: _bootstrapped ? const _AuthGate() : const SplashScreen(),
+    );
+  }
+}
+
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SplashScreen();
+        }
+        if (snapshot.hasData && snapshot.data != null) {
+          final uid = snapshot.data!.uid;
+          SharedPreferences.getInstance().then((prefs) {
+            prefs.setString('active_user_uid', uid);
+          });
+          return const MainLayout();
+        }
+        return const OnboardingScreen();
+      },
     );
   }
 }

@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBAVBgeQFCD1FhLdBYYwRKAZEzB18-y3a4',
-    appId: '1:65602568709:android:f13235c0037b6d9ae2126c',
-    messagingSenderId: '65602568709',
-    projectId: 'zaya-wellness-2026',
-    storageBucket: 'zaya-wellness-2026.firebasestorage.app',
+    apiKey: 'AIzaSyDxKYyBho9BL67O1VFYX-LuHGX7Gq3c4Uw',
+    appId: '1:847475352438:android:0c4602eb59cde9ed4b9057',
+    messagingSenderId: '847475352438',
+    projectId: 'hercycle-bloom-prod',
+    storageBucket: 'hercycle-bloom-prod.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBAVBgeQFCD1FhLdBYYwRKAZEzB18-y3a4',
-    appId: '1:65602568709:ios:PLACEHOLDER',
-    messagingSenderId: '65602568709',
-    projectId: 'zaya-wellness-2026',
-    storageBucket: 'zaya-wellness-2026.firebasestorage.app',
-    iosBundleId: 'com.zaya.zaya',
+    apiKey: 'AIzaSyC7aAO7pizyZiMYpDEZ1Il3gw4iALsa_SQ',
+    appId: '1:847475352438:ios:0c57dde64774df684b9057',
+    messagingSenderId: '847475352438',
+    projectId: 'hercycle-bloom-prod',
+    storageBucket: 'hercycle-bloom-prod.firebasestorage.app',
+    iosBundleId: 'com.hercyclebloom.app',
   );
 }

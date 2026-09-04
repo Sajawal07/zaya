@@ -22,38 +22,43 @@ const CycleLogSchema = CollectionSchema(
       name: r'date',
       type: IsarType.dateTime,
     ),
-    r'flow': PropertySchema(
+    r'energy': PropertySchema(
       id: 1,
+      name: r'energy',
+      type: IsarType.string,
+    ),
+    r'flow': PropertySchema(
+      id: 2,
       name: r'flow',
       type: IsarType.string,
     ),
     r'isPeriodEnd': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'isPeriodEnd',
       type: IsarType.bool,
     ),
     r'isPeriodStart': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isPeriodStart',
       type: IsarType.bool,
     ),
     r'mood': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'mood',
       type: IsarType.string,
     ),
     r'notes': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'notes',
       type: IsarType.string,
     ),
     r'symptoms': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'symptoms',
       type: IsarType.stringList,
     ),
     r'userId': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'userId',
       type: IsarType.string,
     )
@@ -106,6 +111,12 @@ int _cycleLogEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
+    final value = object.energy;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.flow;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -146,13 +157,14 @@ void _cycleLogSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.date);
-  writer.writeString(offsets[1], object.flow);
-  writer.writeBool(offsets[2], object.isPeriodEnd);
-  writer.writeBool(offsets[3], object.isPeriodStart);
-  writer.writeString(offsets[4], object.mood);
-  writer.writeString(offsets[5], object.notes);
-  writer.writeStringList(offsets[6], object.symptoms);
-  writer.writeString(offsets[7], object.userId);
+  writer.writeString(offsets[1], object.energy);
+  writer.writeString(offsets[2], object.flow);
+  writer.writeBool(offsets[3], object.isPeriodEnd);
+  writer.writeBool(offsets[4], object.isPeriodStart);
+  writer.writeString(offsets[5], object.mood);
+  writer.writeString(offsets[6], object.notes);
+  writer.writeStringList(offsets[7], object.symptoms);
+  writer.writeString(offsets[8], object.userId);
 }
 
 CycleLog _cycleLogDeserialize(
@@ -163,14 +175,15 @@ CycleLog _cycleLogDeserialize(
 ) {
   final object = CycleLog();
   object.date = reader.readDateTime(offsets[0]);
-  object.flow = reader.readStringOrNull(offsets[1]);
+  object.energy = reader.readStringOrNull(offsets[1]);
+  object.flow = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.isPeriodEnd = reader.readBool(offsets[2]);
-  object.isPeriodStart = reader.readBool(offsets[3]);
-  object.mood = reader.readStringOrNull(offsets[4]);
-  object.notes = reader.readStringOrNull(offsets[5]);
-  object.symptoms = reader.readStringList(offsets[6]);
-  object.userId = reader.readString(offsets[7]);
+  object.isPeriodEnd = reader.readBool(offsets[3]);
+  object.isPeriodStart = reader.readBool(offsets[4]);
+  object.mood = reader.readStringOrNull(offsets[5]);
+  object.notes = reader.readStringOrNull(offsets[6]);
+  object.symptoms = reader.readStringList(offsets[7]);
+  object.userId = reader.readString(offsets[8]);
   return object;
 }
 
@@ -186,16 +199,18 @@ P _cycleLogDeserializeProp<P>(
     case 1:
       return (reader.readStringOrNull(offset)) as P;
     case 2:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 5:
       return (reader.readStringOrNull(offset)) as P;
     case 6:
-      return (reader.readStringList(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 7:
+      return (reader.readStringList(offset)) as P;
+    case 8:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -483,6 +498,152 @@ extension CycleLogQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'energy',
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'energy',
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'energy',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'energy',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'energy',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'energy',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterFilterCondition> energyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'energy',
+        value: '',
       ));
     });
   }
@@ -1385,6 +1546,18 @@ extension CycleLogQuerySortBy on QueryBuilder<CycleLog, CycleLog, QSortBy> {
     });
   }
 
+  QueryBuilder<CycleLog, CycleLog, QAfterSortBy> sortByEnergy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'energy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterSortBy> sortByEnergyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'energy', Sort.desc);
+    });
+  }
+
   QueryBuilder<CycleLog, CycleLog, QAfterSortBy> sortByFlow() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'flow', Sort.asc);
@@ -1469,6 +1642,18 @@ extension CycleLogQuerySortThenBy
   QueryBuilder<CycleLog, CycleLog, QAfterSortBy> thenByDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterSortBy> thenByEnergy() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'energy', Sort.asc);
+    });
+  }
+
+  QueryBuilder<CycleLog, CycleLog, QAfterSortBy> thenByEnergyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'energy', Sort.desc);
     });
   }
 
@@ -1565,6 +1750,13 @@ extension CycleLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<CycleLog, CycleLog, QDistinct> distinctByEnergy(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'energy', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<CycleLog, CycleLog, QDistinct> distinctByFlow(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1623,6 +1815,12 @@ extension CycleLogQueryProperty
   QueryBuilder<CycleLog, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<CycleLog, String?, QQueryOperations> energyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'energy');
     });
   }
 

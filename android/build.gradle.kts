@@ -31,9 +31,13 @@ subprojects {
             try {
                 val android = p.extensions.findByName("android")
                 if (android != null) {
-                    val method = android.javaClass.getMethod("setNamespace", String::class.java)
-                    method.invoke(android, "dev.isar.isar_flutter_libs")
+                    val nsMethod = android.javaClass.getMethod("setNamespace", String::class.java)
+                    nsMethod.invoke(android, "dev.isar.isar_flutter_libs")
                     println("Applied namespace fix for isar_flutter_libs")
+                    
+                    val sdkMethod = android.javaClass.getMethod("setCompileSdkVersion", Int::class.javaPrimitiveType)
+                    sdkMethod.invoke(android, 35)
+                    println("Applied compileSdk fix for isar_flutter_libs")
                 }
             } catch (e: Exception) {
                 println("Namespace fix failed: ${e.message}")
@@ -46,6 +50,46 @@ subprojects {
     } else {
         project.afterEvaluate {
             applyNamespaceFix(project)
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+
+    plugins.withId("com.android.library") {
+        if (project.name == "awesome_notifications" || project.name == "cloud_firestore") {
+            afterEvaluate {
+                try {
+                    val android = extensions.findByName("android")
+                    if (android != null) {
+                        val nsMethod = android.javaClass.getMethod("setNamespace", String::class.java)
+                        val nsValue = if (project.name == "awesome_notifications") "me.carda.awesome_notifications" else "io.flutter.plugins.firebase.firestore"
+                        nsMethod.invoke(android, nsValue)
+                        println("Applied namespace fix for ${project.name}")
+                    }
+                } catch (_: Exception) {}
+
+                try {
+                    tasks.named("processReleaseManifest").configure {
+                        doFirst {
+                            val androidSrc = extensions.findByName("android")
+                            val srcDir = androidSrc?.javaClass?.getMethod("getSourceSets")?.invoke(androidSrc)
+                            // Strip package from source AndroidManifest.xml
+                            val manifestFile = project.file("src/main/AndroidManifest.xml")
+                            if (manifestFile.exists()) {
+                                var content = manifestFile.readText()
+                                val pattern = Regex("""xmlns:android="[^"]*"\s+package="[^"]*"""")
+                                if (content.contains("package=")) {
+                                    content = content.replace(Regex("""\s+package="[^"]*""""), "")
+                                    manifestFile.writeText(content)
+                                    println("Stripped package attribute from ${project.name} AndroidManifest.xml")
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
     }
 }

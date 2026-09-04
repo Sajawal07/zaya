@@ -79,7 +79,7 @@ class RecipeDetailScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.nudeRose.withOpacity(0.2),
+                            color: AppColors.nudeRose.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -97,9 +97,9 @@ class RecipeDetailScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.mistySage.withOpacity(0.15),
+                      color: AppColors.mistySage.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.mistySage.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.mistySage.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,

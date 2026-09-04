@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'package:zaya/models/nutrition_enums.dart';
+import 'package:hercycle_bloom/models/nutrition_enums.dart';
 
 part 'nutrition_log.g.dart';
 
@@ -14,6 +14,10 @@ class NutritionLog {
   late double protein;
   late double carbs;
   late double fats;
+  late double fiber;
+  late double glycemicIndex;
+  
+  double? pcosScore;
   
   @Enumerated(EnumType.name)
   late MealType type;

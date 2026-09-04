@@ -1,0 +1,22 @@
+@echo off
+:: ============================================================
+:: HerCycle Bloom — Release AAB Build Script (EXAMPLE)
+:: ============================================================
+:: 1. Copy this file to: build_release.bat  (git-ignored)
+:: 2. Replace YOUR_GEMINI_API_KEY with your real key
+:: 3. Run: build_release.bat
+:: ============================================================
+
+set GEMINI_KEY=YOUR_GEMINI_API_KEY
+
+echo.
+echo [1/2] Building signed release AAB...
+echo.
+
+flutter build appbundle --release --dart-define=GEMINI_API_KEY=%GEMINI_KEY%
+
+echo.
+echo [2/2] Done!
+echo Output: build\app\outputs\bundle\release\app-release.aab
+echo.
+pause

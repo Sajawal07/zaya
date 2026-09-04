@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../models/pregnancy_data.dart';
 import '../../../../providers/database_provider.dart';
+import 'package:hercycle_bloom/shared/widgets/empty_state.dart';
+import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 
 class KickCounterScreen extends ConsumerStatefulWidget {
   const KickCounterScreen({super.key});
@@ -145,17 +147,17 @@ class _KickCounterScreenState extends ConsumerState<KickCounterScreen> {
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _isActive ? AppColors.white : AppColors.nudeRose.withOpacity(0.1),
+                  color: _isActive ? AppColors.white : AppColors.nudeRose.withValues(alpha: 0.1),
                   boxShadow: [
                     if (_isActive)
                       BoxShadow(
-                        color: AppColors.pregnancyGold.withOpacity(0.3),
+                        color: AppColors.pregnancyGold.withValues(alpha: 0.3),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
                   ],
                   border: Border.all(
-                    color: _isActive ? AppColors.pregnancyGold : AppColors.nudeRose.withOpacity(0.5),
+                    color: _isActive ? AppColors.pregnancyGold : AppColors.nudeRose.withValues(alpha: 0.5),
                     width: _isActive ? 8 : 2, 
                   ),
                 ),
@@ -224,9 +226,13 @@ class _KickCounterScreenState extends ConsumerState<KickCounterScreen> {
             const SizedBox(height: 16),
             Expanded(
               child: _isLoadingHistory 
-                ? const Center(child: CircularProgressIndicator())
+                ? const AppLoaderCentered()
                 : _history.isEmpty 
-                  ? Center(child: Text('No history yet.', style: TextStyle(color: AppColors.textSecondary)))
+                  ? const EmptyState(
+                      icon: Icons.schedule_rounded,
+                      title: 'No kicks logged yet',
+                      subtitle: "Tap Start Session when baby starts moving to begin tracking!",
+                    )
                   : ListView.separated(
                 itemCount: _history.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -261,7 +267,7 @@ class _KickCounterScreenState extends ConsumerState<KickCounterScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: AppColors.pregnancyGold.withOpacity(0.2),
+                            color: AppColors.pregnancyGold.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(

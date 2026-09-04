@@ -1,4 +1,4 @@
-# Zaya - Wellness & Cycle Tracking App
+# HerCycle Bloom - Wellness & Cycle Tracking App
 
 A Flutter mobile application for cycle tracking, PCOS management, and pregnancy monitoring with AI-powered assistance.
 
@@ -23,7 +23,7 @@ A Flutter mobile application for cycle tracking, PCOS management, and pregnancy 
 ## ✅ Implemented Features (Phase 1)
 
 ### Authentication & Onboarding
-- ✅ Native Splash Screen with Zaya branding
+- ✅ Native Splash Screen with HerCycle Bloom branding
 - ✅ 3-Screen Animated Onboarding flow
 - ✅ **Google Sign-In** integrated with Firebase Auth
 - ✅ AuthService with Riverpod state management

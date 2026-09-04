@@ -1,42 +1,49 @@
 {
   "project_info": {
-    "project_number": "65602568709",
-    "project_id": "zaya-wellness-2026",
-    "storage_bucket": "zaya-wellness-2026.firebasestorage.app"
+    "project_number": "847475352438",
+    "project_id": "hercycle-bloom-prod",
+    "storage_bucket": "hercycle-bloom-prod.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:65602568709:android:f13235c0037b6d9ae2126c",
+        "mobilesdk_app_id": "1:847475352438:android:0c4602eb59cde9ed4b9057",
         "android_client_info": {
-          "package_name": "com.zaya.zaya"
+          "package_name": "com.hercyclebloom.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "65602568709-evcvo8rbkvjfuoeics66sioumesb11rq.apps.googleusercontent.com",
+          "client_id": "847475352438-hif3n8ne9v9kdsav3g93nmloc6t8u9pe.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.zaya.zaya",
+            "package_name": "com.hercyclebloom.app",
             "certificate_hash": "2fa85bd3ee38fd9585e78bcb7bcb9d330aec4602"
           }
         },
         {
-          "client_id": "65602568709-kocegmhen4dkbofdmlum8maboi2a4uv8.apps.googleusercontent.com",
+          "client_id": "847475352438-e7vab4fkh502ko7i9i1g9noct6kgp4kf.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBAVBgeQFCD1FhLdBYYwRKAZEzB18-y3a4"
+          "current_key": "AIzaSyDxKYyBho9BL67O1VFYX-LuHGX7Gq3c4Uw"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "65602568709-kocegmhen4dkbofdmlum8maboi2a4uv8.apps.googleusercontent.com",
+              "client_id": "847475352438-e7vab4fkh502ko7i9i1g9noct6kgp4kf.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "847475352438-2p1khf9b1k4c2gipdf3hggaatngfh271.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hercyclebloom.app"
+              }
             }
           ]
         }

@@ -5,6 +5,7 @@ import '../../../../core/app_colors.dart';
 import '../../../../models/pregnancy_data.dart';
 import '../../../../providers/database_provider.dart';
 import '../../../../services/notification_service.dart';
+import '../../../../shared/widgets/app_loader.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
@@ -54,13 +55,13 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         label: const Text('Add New', style: TextStyle(color: AppColors.white)),
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoaderCentered()
           : _appointments.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 64, color: AppColors.mistySage.withOpacity(0.5)),
+                  Icon(Icons.calendar_today_outlined, size: 64, color: AppColors.mistySage.withValues(alpha: 0.5)),
                   const SizedBox(height: 16),
                   Text(
                     'No upcoming appointments',
@@ -90,7 +91,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: _getTypeColor(apt.type).withOpacity(0.1),
+                                color: _getTypeColor(apt.type).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
@@ -124,7 +125,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               decoration: BoxDecoration(
                                 color: AppColors.oldLace,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: AppColors.nudeRose.withOpacity(0.3)),
+                                border: Border.all(color: AppColors.nudeRose.withValues(alpha: 0.3)),
                               ),
                               child: Column(
                                 children: [
@@ -153,7 +154,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.oldLace.withOpacity(0.5),
+                              color: AppColors.oldLace.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(

@@ -41,18 +41,18 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
       label: 'Menstrual',
       color: Color(0xFFD47A8E), // Dark Pink
       startDay: 1,
-      endDay: 6,
+      endDay: 5,
     ),
     const CyclePhase(
       label: 'Follicular',
       color: Color(0xFFE7C6F0), // Light Purple
-      startDay: 7,
-      endDay: 11,
+      startDay: 6,
+      endDay: 10,
     ),
     const CyclePhase(
       label: 'Ovulation',
       color: Color(0xFFFFB88C), // Orange/Peach
-      startDay: 12,
+      startDay: 11,
       endDay: 16,
     ),
     const CyclePhase(
@@ -113,12 +113,16 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
-                  return SizedBox(
-                    width: 380,
-                    height: 380,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
+                  return AspectRatio(
+                    aspectRatio: 1,
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxWidth: 380,
+                        maxHeight: 380,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
                         // Outer background ring glow
                         Container(
                           width: 300,
@@ -127,7 +131,7 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFF4B6C2).withOpacity(0.08),
+                                color: const Color(0xFFF4B6C2).withValues(alpha: 0.08),
                                 blurRadius: 40,
                                 spreadRadius: 10,
                               ),
@@ -145,8 +149,9 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                         _buildCenterText(),
                       ],
                     ),
-                  );
-                },
+                  ),
+                );
+              },
               ),
             ),
             
@@ -160,19 +165,17 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFD47A8E).withOpacity(0.3),
+                      color: const Color(0xFFD47A8E).withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: ElevatedButton(
-                  onPressed: (widget.currentDay > 25 || widget.currentDay == 0) 
-                    ? widget.onStartToday 
-                    : null,
+                  onPressed: widget.onStartToday,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD47A8E),
-                    disabledBackgroundColor: const Color(0xFFD47A8E).withOpacity(0.4),
+                    disabledBackgroundColor: const Color(0xFFD47A8E).withValues(alpha: 0.4),
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 60),
                     shape: RoundedRectangleBorder(
@@ -181,9 +184,7 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                     elevation: 0,
                   ),
                   child: Text(
-                    (widget.currentDay > 0 && widget.currentDay <= 25) 
-                        ? 'Period Tracked' 
-                        : 'Start Today',
+                    'Log Period Start',
                     style: GoogleFonts.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -203,10 +204,10 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFF4B6C2).withOpacity(0.3)),
+                    border: Border.all(color: const Color(0xFFF4B6C2).withValues(alpha: 0.3)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -216,7 +217,7 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                     children: [
                       Icon(
                         Icons.info_outline_rounded,
-                        color: widget.currentDay > 35 ? const Color(0xFFD47A8E) : const Color(0xFFD47A8E).withOpacity(0.7),
+                        color: widget.currentDay > 35 ? const Color(0xFFD47A8E) : const Color(0xFFD47A8E).withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 15),
                       Expanded(
@@ -243,52 +244,67 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
   }
 
   Widget _buildCenterText() {
-    String msg = "Best chance to conceive is in";
-    String days = "7 Days";
+    const fertileStart = 11;
+    const fertileEnd = 16;
     
-    if (widget.currentDay >= 12 && widget.currentDay <= 16) {
-      msg = "You are in your";
-      days = "Fertile Window";
-    } else if (widget.currentDay >= 1 && widget.currentDay <= 5) {
+    String msg = "";
+    String days = "";
+    
+    if (widget.currentDay >= 1 && widget.currentDay <= 5) {
       msg = "Your period is in";
       days = "Day ${widget.currentDay}";
+    } else if (widget.currentDay >= fertileStart && widget.currentDay <= fertileEnd) {
+      msg = "You are in your";
+      days = "Fertile Window";
+    } else if (widget.currentDay > 0 && widget.currentDay < fertileStart) {
+      msg = "Fertile window in";
+      days = "${fertileStart - widget.currentDay} Day${fertileStart - widget.currentDay > 1 ? 's' : ''}";
+    } else if (widget.currentDay > fertileEnd && widget.currentDay <= 28) {
+      msg = "Fertile window";
+      days = "Has Passed";
     } else if (widget.currentDay > 28) {
-      msg = "Your cycle is";
-      days = "${widget.currentDay - 28} Days Late";
+      msg = "Your period is";
+      days = "${widget.currentDay - 28} Day${widget.currentDay - 28 > 1 ? 's' : ''} Late";
+    } else {
+      msg = "Set your period";
+      days = "To Start";
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          msg,
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            color: const Color(0xFF757575),
-            letterSpacing: 0.5,
+    return SizedBox(
+      width: 240, // Constrain width to fit within circle radius
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            msg,
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              color: const Color(0xFF757575),
+              letterSpacing: 0.5,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          days,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.playfairDisplay(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333),
-            height: 1.1,
+          const SizedBox(height: 8),
+          Text(
+            days,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.montserrat(
+              fontSize: 26, // Reduced from 32 to prevent overlap
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF333333),
+              height: 1.1,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          "Period Day: ${widget.currentDay}",
-          style: GoogleFonts.outfit(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF9E9E9E),
+          const SizedBox(height: 8),
+          Text(
+            "Period Day: ${widget.currentDay}",
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF9E9E9E),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -308,12 +324,14 @@ class CyclePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double radius = size.width / 2;
     final Offset center = Offset(radius, radius);
-    final double strokeWidth = 36;
+    const double strokeWidth = 36;
+    
+    // Calculate ring radius such that it's centered with space for labels outside
     final double ringRadius = radius - strokeWidth - 10;
     
-    final int totalSegments = 28;
-    final double anglePerSegment = (2 * pi) / totalSegments;
-    final double startAngleOffset = -pi / 2 - (anglePerSegment / 2); // Start exactly at top
+    const int totalSegments = 28;
+    const double anglePerSegment = (2 * pi) / totalSegments;
+    const double startAngleOffset = -pi / 2 - (anglePerSegment / 2); // Center Day 1 at top
 
     // 1. Draw individual segments
     for (int i = 0; i < totalSegments; i++) {
@@ -324,18 +342,19 @@ class CyclePainter extends CustomPainter {
       );
 
       final double startAngle = startAngleOffset + (i * anglePerSegment);
-      const double sweepAngle = 0.21; 
+      const double gap = 0.025; 
+      const double sweepAngle = anglePerSegment - (2 * gap);
 
       final Paint segmentPaint = Paint()
-        ..color = phase.color.withOpacity(0.9)
+        ..color = phase.color.withValues(alpha: 0.9)
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth
         ..strokeCap = StrokeCap.round;
 
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: ringRadius),
-        startAngle + 0.02,
-        sweepAngle - 0.04,
+        startAngle + gap,
+        sweepAngle,
         false,
         segmentPaint,
       );
@@ -344,7 +363,7 @@ class CyclePainter extends CustomPainter {
     // 2. Draw all non-selected numbers first (Middle Layer)
     for (int i = 0; i < totalSegments; i++) {
       final int day = i + 1;
-      if (day == currentDay) continue; // Skip selected day for now
+      if (day == currentDay) continue; 
 
       final double angle = startAngleOffset + (i * anglePerSegment) + (anglePerSegment / 2);
       _drawDayNumber(
@@ -358,44 +377,54 @@ class CyclePainter extends CustomPainter {
       );
     }
 
-    // 3. Draw Highlight & Current Day Text (Top Layer - Prominent)
+    // 3. Draw Highlight & Current Day Text (Top Layer)
     if (currentDay > 0 && currentDay <= 28) {
       final int i = currentDay - 1;
       final double highlightAngle = startAngleOffset + (i * anglePerSegment) + (anglePerSegment / 2);
       
-      // Move highlight slightly outward to avoid hiding neighbor numbers
-      final double highlightRadius = ringRadius + 5; 
+      // NOTE: ringRadius used in drawArc is the center-line of the stroke.
+      // Therefore, indicatorRadius = ringRadius perfectly centers the indicator on the ring path.
+      final double indicatorRadius = ringRadius; 
       final Offset highlightPos = Offset(
-        center.dx + highlightRadius * cos(highlightAngle),
-        center.dy + highlightRadius * sin(highlightAngle),
+        center.dx + indicatorRadius * cos(highlightAngle),
+        center.dy + indicatorRadius * sin(highlightAngle),
       );
 
       final double scale = animationValue;
+      
+      // Proportional sizing for responsive look
+      final double mainIndicatorSize = (strokeWidth * 0.65) * scale;
+      final double glowSize = (strokeWidth * 0.85) * scale;
 
-      // Adjusted Glow effect
+      // Premium Shadow Layer (Subtle depth)
+      final Paint shadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: 0.12)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      canvas.drawCircle(highlightPos + const Offset(0, 3), mainIndicatorSize, shadowPaint);
+
+      // Bloom/Glow Layer
       final Paint glowPaint = Paint()
-        ..color = Colors.white.withOpacity(0.6)
+        ..color = Colors.white.withValues(alpha: 0.7)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-      canvas.drawCircle(highlightPos, (strokeWidth / 2 + 12) * scale, glowPaint);
+      canvas.drawCircle(highlightPos, glowSize, glowPaint);
 
-      // Adjusted White Highlight Circle
+      // Main Indicator Circle (White)
       final Paint highlightPaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(highlightPos, (strokeWidth / 2 + 6) * scale, highlightPaint);
+      canvas.drawCircle(highlightPos, mainIndicatorSize, highlightPaint);
       
-      // Prominent Border
+      // Fine Accent Border
       final Paint borderPaint = Paint()
-        ..color = const Color(0xFFF4B6C2).withOpacity(0.4)
+        ..color = const Color(0xFFD47A8E).withValues(alpha: 0.3)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0;
-      canvas.drawCircle(highlightPos, (strokeWidth / 2 + 6) * scale, borderPaint);
+        ..strokeWidth = 1.2;
+      canvas.drawCircle(highlightPos, mainIndicatorSize, borderPaint);
 
-      // Current Day Text on Top (Using slightly shifted radius)
       _drawDayNumber(
         canvas, 
         center, 
-        highlightRadius, 
+        indicatorRadius, 
         highlightAngle, 
         currentDay, 
         isSelected: true, 
@@ -403,9 +432,10 @@ class CyclePainter extends CustomPainter {
       );
     }
 
-    // Draw Phase Labels
+    // Draw Phase Labels (Dynamic Radius - 16px outside the outer edge of the ring)
+    final double labelRadius = ringRadius + (strokeWidth / 2) + 16;
     for (var phase in phases) {
-      _drawPhaseLabel(canvas, center, ringRadius + 34, startAngleOffset, phase);
+      _drawPhaseLabel(canvas, center, labelRadius, startAngleOffset, phase);
     }
   }
 
@@ -416,7 +446,7 @@ class CyclePainter extends CustomPainter {
         style: GoogleFonts.outfit(
           fontSize: isSelected ? 12 : 10,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
-          color: isSelected ? const Color(0xFF333333) : const Color(0xFF333333).withOpacity(0.7),
+          color: isSelected ? const Color(0xFF333333) : const Color(0xFF333333).withValues(alpha: 0.7),
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -483,7 +513,7 @@ class CyclePainter extends CustomPainter {
           style: GoogleFonts.outfit(
             fontSize: 9,
             fontWeight: FontWeight.w700,
-            color: color.withOpacity(0.9),
+            color: color.withValues(alpha: 0.9),
             letterSpacing: 0.8,
           ),
         ),

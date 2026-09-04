@@ -18,6 +18,8 @@ class CycleLog {
   
   List<String>? symptoms; // Cramps, Headache, etc.
   
+  String? energy; // Energetic, Tired
+  
   bool isPeriodStart = false;
   bool isPeriodEnd = false;
   

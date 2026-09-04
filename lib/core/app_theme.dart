@@ -15,22 +15,22 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.oldLace,
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.playfairDisplay(
+        displayLarge: GoogleFonts.montserrat(
           fontSize: 32,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        displayMedium: GoogleFonts.playfairDisplay(
+        displayMedium: GoogleFonts.montserrat(
           fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        displaySmall: GoogleFonts.playfairDisplay(
+        displaySmall: GoogleFonts.montserrat(
           fontSize: 24,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
         ),
-        headlineMedium: GoogleFonts.playfairDisplay(
+        headlineMedium: GoogleFonts.montserrat(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
@@ -53,7 +53,7 @@ class AppTheme {
         backgroundColor: AppColors.oldLace,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.playfairDisplay(
+        titleTextStyle: GoogleFonts.montserrat(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,

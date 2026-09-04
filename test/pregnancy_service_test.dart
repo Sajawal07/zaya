@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zaya/features/pregnancy/domain/pregnancy_service.dart';
+import 'package:hercycle_bloom/features/pregnancy/domain/pregnancy_service.dart';
 
 void main() {
   group('PregnancyService Tests', () {

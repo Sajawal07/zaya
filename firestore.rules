@@ -3,9 +3,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User settings backup (encrypted)
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // User profile documents & subcollections
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow user to write normal profile data, but BLOCK client modification of entitlement fields!
+      // Entitlement flags (isPremium, subscriptionType, purchaseToken, verifiedAt) can ONLY be set by Admin SDK inside Cloud Functions.
+      allow create: if request.auth != null && request.auth.uid == userId
+        && (!request.resource.data.keys().hasAny(['isPremium', 'subscriptionType', 'purchaseToken', 'verifiedAt'])
+            || request.resource.data.isPremium == false);
+
+      allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isPremium', 'subscriptionType', 'purchaseToken', 'verifiedAt']);
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Purchase tokens tracking collection — locked from all direct client access!
+    // Written solely by Firebase Admin SDK inside verifyGooglePlayPurchase Cloud Function to prevent token replay attacks.
+    match /purchase_tokens/{tokenId} {
+      allow read, write: if false;
     }
   }
 }

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:zaya/core/app_colors.dart';
-import 'package:zaya/models/cycle_log.dart';
-import 'package:zaya/providers/database_provider.dart';
+import 'package:hercycle_bloom/core/app_colors.dart';
+import 'package:hercycle_bloom/models/cycle_log.dart';
+import 'package:hercycle_bloom/providers/database_provider.dart';
+import 'package:hercycle_bloom/providers/cycle_provider.dart';
+import 'package:hercycle_bloom/providers/wellness_provider.dart';
+import 'package:hercycle_bloom/providers/metrics_provider.dart';
+import 'package:hercycle_bloom/services/cycle_update_handler.dart';
+import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 
 class QuickLogSheet extends ConsumerStatefulWidget {
   const QuickLogSheet({super.key});
@@ -15,20 +20,25 @@ class QuickLogSheet extends ConsumerStatefulWidget {
 class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
   String? selectedFlow;
   String? selectedMood;
+  String? selectedEnergy;
   List<String> selectedSymptoms = [];
-  bool isPeriodStart = false;
+  String notes = '';
+  String weightText = '';
   CycleLog? existingLog;
   bool isLoading = true;
+  bool isAdvancedExpanded = false;
 
   final List<String> flowOptions = ['Light', 'Medium', 'Heavy'];
-  final List<String> moodOptions = ['Happy', 'Anxious', 'Moody', 'Energetic', 'Tired'];
-  final List<String> symptomOptions = [
-    'Cramps',
-    'Headache',
-    'Bloating',
+  final List<String> moodOptions = ['Happy', 'Anxious', 'Moody'];
+  final List<String> energyOptions = ['Energetic', 'Tired'];
+  final List<String> topSymptoms = ['Cramps', 'Headache', 'Bloating'];
+  final List<String> otherSymptoms = [
     'Tender Breasts',
     'Backache',
     'Fatigue',
+    'Nausea',
+    'Acne',
+    'Insomnia',
   ];
 
   @override
@@ -45,25 +55,38 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     final logs = await db.getAllLogs(user.uid);
     final today = DateTime.now();
     
-    final logToday = logs.firstWhere(
+    final logToday = logs.isEmpty ? null : logs.firstWhere(
       (l) => l.date.year == today.year && l.date.month == today.month && l.date.day == today.day,
       orElse: () => CycleLog()..id = -1..userId = user.uid,
     );
 
-    if (logToday.id != -1) {
+    // Load weight from WellnessLog for today
+    final wellnessToday = await db.getWellnessLogForDate(user.uid, today);
+
+    if (logToday != null && logToday.id != -1) {
       if (mounted) {
         setState(() {
           existingLog = logToday;
           selectedFlow = logToday.flow;
           selectedMood = logToday.mood;
+          selectedEnergy = logToday.energy;
           selectedSymptoms = List.from(logToday.symptoms ?? []);
-          isPeriodStart = logToday.isPeriodStart;
+          notes = logToday.notes ?? '';
+          if (wellnessToday?.weight != null) {
+            weightText = wellnessToday!.weight!.toStringAsFixed(1);
+          }
           isLoading = false;
         });
       }
     } else {
+      // Smart Defaults: Pre-fill from the most recent previous log
+      final lastLog = logs.isNotEmpty ? logs.first : null;
       if (mounted) {
         setState(() {
+          if (lastLog != null) {
+            selectedMood = lastLog.mood;
+            selectedEnergy = lastLog.energy;
+          }
           isLoading = false;
         });
       }
@@ -73,7 +96,7 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+      return const SizedBox(height: 200, child: AppLoaderCentered());
     }
 
     final bool isAlreadyLogged = existingLog != null;
@@ -99,7 +122,7 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withOpacity(0.3),
+                    color: AppColors.textSecondary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -109,9 +132,27 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Log Today',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Track Your Day',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Track your mood, symptoms, and flow to receive personalized insights.',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (existingLog != null)
                     IconButton(
@@ -120,41 +161,18 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
               const SizedBox(height: 32),
 
-              if (isAlreadyLogged)
+              if (existingLog != null)
                 _buildAlreadyLoggedInfo()
               else ...[
-                // Period Tracking
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Did your period start today?',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Switch(
-                      value: isPeriodStart,
-                      onChanged: (value) => setState(() => isPeriodStart = value),
-                      activeColor: AppColors.periodRed,
-                    ),
-                  ],
-                ),
+                // Phase Indicator (Auto-Highlight)
+                _buildAutoHighlightBanner(),
+                
                 const SizedBox(height: 24),
 
-                // Flow
-                Text(
-                  'Flow',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 12),
+                // FLOW SECTION
+                _buildSectionHeader('Flow', Icons.water_drop_outlined, AppColors.periodRed),
                 Wrap(
                   spacing: 12,
                   children: flowOptions.map((flow) {
@@ -163,11 +181,9 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                       label: Text(flow),
                       selected: isSelected,
                       onSelected: (selected) {
-                        setState(() {
-                          selectedFlow = selected ? flow : null;
-                        });
+                        setState(() => selectedFlow = selected ? flow : null);
                       },
-                      selectedColor: AppColors.periodRed.withOpacity(0.2),
+                      selectedColor: AppColors.periodRed.withValues(alpha: 0.2),
                       backgroundColor: AppColors.white,
                       labelStyle: TextStyle(
                         color: isSelected ? AppColors.periodRed : AppColors.textPrimary,
@@ -176,29 +192,29 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                     );
                   }).toList(),
                 ),
+                
+                // Flow is daily health data only — period start is logged on Home.
+                const SizedBox(height: 8),
+                Text(
+                  'Flow does not start or reset your cycle.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
 
                 const SizedBox(height: 24),
 
-                // Mood
-                Text(
-                  'Mood',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                const SizedBox(height: 12),
+                // MOOD SECTION
+                _buildSectionHeader('Mood', Icons.face_outlined, AppColors.nudeRose),
                 Wrap(
                   spacing: 12,
-                  runSpacing: 12,
                   children: moodOptions.map((mood) {
                     final isSelected = selectedMood == mood;
                     return ChoiceChip(
                       label: Text(mood),
                       selected: isSelected,
                       onSelected: (selected) {
-                        setState(() {
-                          selectedMood = selected ? mood : null;
-                        });
+                        setState(() => selectedMood = selected ? mood : null);
                       },
-                      selectedColor: AppColors.nudeRose.withOpacity(0.2),
+                      selectedColor: AppColors.nudeRose.withValues(alpha: 0.2),
                       backgroundColor: AppColors.white,
                       labelStyle: TextStyle(
                         color: isSelected ? AppColors.nudeRose : AppColors.textPrimary,
@@ -210,16 +226,36 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
 
                 const SizedBox(height: 24),
 
-                // Symptoms
-                Text(
-                  'Symptoms',
-                  style: Theme.of(context).textTheme.labelLarge,
+                // ENERGY SECTION
+                _buildSectionHeader('Energy Level', Icons.bolt_outlined, AppColors.pregnancyGold),
+                Wrap(
+                  spacing: 12,
+                  children: energyOptions.map((energy) {
+                    final isSelected = selectedEnergy == energy;
+                    return ChoiceChip(
+                      label: Text(energy),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() => selectedEnergy = selected ? energy : null);
+                      },
+                      selectedColor: AppColors.pregnancyGold.withValues(alpha: 0.2),
+                      backgroundColor: AppColors.white,
+                      labelStyle: TextStyle(
+                        color: isSelected ? AppColors.pregnancyGold : AppColors.textPrimary,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    );
+                  }).toList(),
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 24),
+
+                // COMMON SYMPTOMS
+                _buildSectionHeader('Common Symptoms', Icons.healing_outlined, AppColors.mistySage),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
-                  children: symptomOptions.map((symptom) {
+                  children: topSymptoms.map((symptom) {
                     final isSelected = selectedSymptoms.contains(symptom);
                     return FilterChip(
                       label: Text(symptom),
@@ -233,9 +269,8 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                           }
                         });
                       },
-                      selectedColor: AppColors.mistySage.withOpacity(0.3),
+                      selectedColor: AppColors.mistySage.withValues(alpha: 0.3),
                       backgroundColor: AppColors.white,
-                      checkmarkColor: AppColors.mistySage,
                       labelStyle: TextStyle(
                         color: isSelected ? AppColors.mistySage : AppColors.textPrimary,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -244,13 +279,105 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                   }).toList(),
                 ),
 
+                const SizedBox(height: 24),
+
+                // ADVANCED SECTION (COLLAPSIBLE)
+                Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    title: const Text('Advanced Tracker', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Add notes or other symptoms', style: TextStyle(fontSize: 11)),
+                    leading: const Icon(Icons.tune_rounded, size: 20),
+                    childrenPadding: const EdgeInsets.all(0),
+                    children: [
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: otherSymptoms.map((symptom) {
+                                final isSelected = selectedSymptoms.contains(symptom);
+                                return FilterChip(
+                                  label: Text(symptom, style: const TextStyle(fontSize: 12)),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        selectedSymptoms.add(symptom);
+                                      } else {
+                                        selectedSymptoms.remove(symptom);
+                                      }
+                                    });
+                                  },
+                                  selectedColor: AppColors.mistySage.withValues(alpha: 0.15),
+                                  backgroundColor: AppColors.white,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppColors.mistySage : AppColors.textPrimary,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              controller: TextEditingController(text: weightText),
+                              onChanged: (val) => setState(() => weightText = val),
+                              decoration: InputDecoration(
+                                hintText: 'e.g. 65.5',
+                                hintStyle: const TextStyle(fontSize: 13),
+                                labelText: 'Weight (kg)',
+                                labelStyle: const TextStyle(fontSize: 13),
+                                prefixIcon: const Icon(Icons.monitor_weight_outlined, size: 18),
+                                filled: true,
+                                fillColor: AppColors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              onChanged: (val) => setState(() => notes = val),
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: 'Any specific notes for today?',
+                                hintStyle: const TextStyle(fontSize: 13),
+                                filled: true,
+                                fillColor: AppColors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 const SizedBox(height: 32),
 
                 // Save button
                 ElevatedButton(
                   onPressed: () async {
                     await _saveLog();
-                    if (mounted) Navigator.pop(context);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Saved! Your data will help personalize insights.'),
+                          backgroundColor: AppColors.fertileGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      Navigator.pop(context);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.nudeRose,
@@ -259,8 +386,9 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    elevation: 0,
                   ),
-                  child: const Text('Save Log'),
+                  child: const Text('Complete Check-in', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ],
               const SizedBox(height: 16),
@@ -273,24 +401,55 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
 
   Widget _buildAlreadyLoggedInfo() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.fertileGreen.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.fertileGreen.withOpacity(0.3)),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.fertileGreen.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const Icon(Icons.check_circle_outline_rounded, color: AppColors.fertileGreen, size: 48),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.fertileGreen.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check_circle_rounded, color: AppColors.fertileGreen, size: 32),
+          ),
           const SizedBox(height: 16),
           Text(
-            'Already Logged!',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppColors.fertileGreen),
+            'Wellness Logged!',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'You have already recorded your wellness data for today. You can delete today\'s log using the trash icon above if you need to make changes.',
+            'You have successfully tracked your data for today. Every entry helps personalize your hormonal insights.',
             textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => _showDeleteConfirmation(),
+            child: const Text(
+              'Update or Delete Entry',
+              style: TextStyle(
+                color: AppColors.error,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -302,18 +461,25 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Today\'s Log?'),
-        content: const Text('This will remove your data for today. You can then log again if needed.'),
+        content: const Text('This action cannot be undone. Are you sure you want to delete today\'s log?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               final db = ref.read(databaseServiceProvider);
-              // In Isar, we delete by ID. We already have existingLog.id
-              // But we didn't add a specific delete method for single log. 
-              // Let's add it or use a query. 
-              // For now, I'll update the DatabaseService with a generic delete.
-              // Actually, I can just clear today's log.
-              await db.deleteLogsAfter(DateTime.now().subtract(const Duration(hours: 24)));
+              final user = FirebaseAuth.instance.currentUser;
+              if (user != null) {
+                if (existingLog != null && existingLog!.id != -1) {
+                  await db.deleteCycleLogById(existingLog!.id);
+                } else {
+                  final today = DateTime.now();
+                  final todayLog = await db.getLogForDate(user.uid, DateTime(today.year, today.month, today.day));
+                  if (todayLog != null) {
+                    await db.deleteCycleLogById(todayLog.id);
+                  }
+                }
+                await CycleUpdateHandler.onCycleDataChanged(ref, user.uid);
+              }
               if (mounted) {
                 Navigator.pop(context); // Pop dialog
                 Navigator.pop(context); // Pop sheet
@@ -331,14 +497,93 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final today = DateTime.now();
     final log = CycleLog()
       ..userId = user.uid
-      ..date = DateTime.now()
+      ..date = DateTime(today.year, today.month, today.day)
       ..flow = selectedFlow
       ..mood = selectedMood
+      ..energy = selectedEnergy
       ..symptoms = selectedSymptoms
-      ..isPeriodStart = isPeriodStart;
+      ..isPeriodStart = existingLog?.isPeriodStart ?? false
+      ..notes = notes;
+    if (existingLog != null && existingLog!.id != -1) {
+      log.id = existingLog!.id;
+    }
     
     await db.saveCycleLog(log);
+
+    // Save weight to WellnessLog if provided
+    final weight = double.tryParse(weightText);
+    if (weight != null) {
+      await ref.read(wellnessProvider.notifier).logWellness(weight: weight);
+      // Sync weight to UserMetrics for BMI calculation
+      final metrics = await db.getUserMetrics(user.uid);
+      if (metrics != null) {
+        metrics.weight = weight;
+        metrics.lastUpdated = DateTime.now();
+        await db.saveUserMetrics(metrics);
+        ref.invalidate(userMetricsProvider);
+      }
+    }
+
+    await CycleUpdateHandler.onCycleDataChanged(ref, user.uid);
+  }
+
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAutoHighlightBanner() {
+    final cycleAsync = ref.watch(cycleDataProvider);
+    
+    return cycleAsync.maybeWhen(
+      data: (info) {
+        if (info.phase == 'Menstrual') {
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.periodRed.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.periodRed.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.periodRed),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Predicted Period Day: Today is a great day to track your flow.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.periodRed,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
   }
 }

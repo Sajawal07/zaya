@@ -1,0 +1,8 @@
+# Copy this file to key.properties (which is git-ignored) and fill in your real values.
+# NEVER commit key.properties with real passwords to version control.
+#
+# storeFile path is relative to the android/app/ directory.
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+storeFile=keystore/release.jks

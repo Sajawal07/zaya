@@ -13,9 +13,17 @@
       "anonymous": false,
       "emailPassword": true,
       "googleSignIn": {
-        "oAuthBrandDisplayName": "Zaya",
+        "oAuthBrandDisplayName": "HerCycle Bloom",
         "supportEmail": "sajawal0005@gmail.com"
       }
     }
+  },
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }

@@ -2,14 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/nutrition_log.dart';
 import '../models/meal_plan.dart';
-import 'package:zaya/models/nutrition_enums.dart';
+import 'package:hercycle_bloom/models/nutrition_enums.dart';
 import 'database_provider.dart';
 import 'pcos_provider.dart';
 import '../features/nourish/domain/models/recipe.dart';
 import '../features/nourish/data/repositories/recipe_repository.dart';
 import '../features/health/domain/models/pcos_guidance.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import '../features/nourish/domain/models/nutrition_models.dart';
+import '../features/nourish/domain/services/nutrition_engine.dart';
+import '../features/nourish/domain/services/meal_scoring_engine.dart';
+import '../features/nourish/domain/services/macro_calculator.dart';
 
 class NutritionState {
   final List<NutritionLog> todayLogs;
@@ -19,6 +21,9 @@ class NutritionState {
   final Recipe? dinner;
   final List<Recipe> snacks;
   final bool isLoading;
+  final NutritionSummary? summary;
+  final int targetCalories;
+  final List<double?> weeklyScores;
 
   NutritionState({
     required this.todayLogs,
@@ -28,77 +33,10 @@ class NutritionState {
     this.dinner,
     this.snacks = const [],
     this.isLoading = false,
-  }) {
-    // Pre-calculate to avoid duplicate loops and summing on every getter access
-    double logCals = 0;
-    double logP = 0;
-    double logC = 0;
-    double logF = 0;
-
-    for (var log in todayLogs) {
-      logCals += log.calories.clamp(0, 10000);
-      logP += log.protein.clamp(0.0, 1000.0);
-      logC += log.carbs.clamp(0.0, 2000.0);
-      logF += log.fats.clamp(0.0, 1000.0);
-    }
-
-    double planCals = 0;
-    double planP = 0;
-    double planC = 0;
-    double planF = 0;
-
-    final loggedTypes = currentPlan?.loggedMealTypes ?? [];
-
-    // Only add planned macros if they haven't been "Logged" yet
-    if (breakfast != null && !loggedTypes.contains(MealType.breakfast.name)) {
-      final m = (currentPlan?.breakfastPortion ?? 1.0).clamp(0.0, 10.0);
-      planCals += breakfast!.calories * m;
-      planP += breakfast!.protein * m;
-      planC += breakfast!.carbs * m;
-      planF += breakfast!.fats * m;
-    }
-
-    if (lunch != null && !loggedTypes.contains(MealType.lunch.name)) {
-      final m = (currentPlan?.lunchPortion ?? 1.0).clamp(0.0, 10.0);
-      planCals += lunch!.calories * m;
-      planP += lunch!.protein * m;
-      planC += lunch!.carbs * m;
-      planF += lunch!.fats * m;
-    }
-
-    if (dinner != null && !loggedTypes.contains(MealType.dinner.name)) {
-      final m = (currentPlan?.dinnerPortion ?? 1.0).clamp(0.0, 10.0);
-      planCals += dinner!.calories * m;
-      planP += dinner!.protein * m;
-      planC += dinner!.carbs * m;
-      planF += dinner!.fats * m;
-    }
-
-    // Snacks (Treating them as suggested until more complex tracking added)
-    // Avoid double counting by checking if any custom entry or similar snack logged?
-    // For now, if user logs ANY non-custom snack, we could track it, but snacks are simple
-    for (var s in snacks) {
-      planCals += s.calories;
-      planP += s.protein;
-      planC += s.carbs;
-      planF += s.fats;
-    }
-
-    _totalCalories = (logCals + planCals).toInt();
-    _totalProtein = logP + planP;
-    _totalCarbs = logC + planC;
-    _totalFats = logF + planF;
-  }
-
-  late final int _totalCalories;
-  late final double _totalProtein;
-  late final double _totalCarbs;
-  late final double _totalFats;
-
-  int get totalCalories => _totalCalories;
-  double get totalProtein => _totalProtein;
-  double get totalCarbs => _totalCarbs;
-  double get totalFats => _totalFats;
+    this.summary,
+    this.targetCalories = 2000,
+    this.weeklyScores = const [],
+  });
 
   NutritionState copyWith({
     List<NutritionLog>? todayLogs,
@@ -108,6 +46,9 @@ class NutritionState {
     Recipe? dinner,
     List<Recipe>? snacks,
     bool? isLoading,
+    NutritionSummary? summary,
+    int? targetCalories,
+    List<double?>? weeklyScores,
   }) {
     return NutritionState(
       todayLogs: todayLogs ?? this.todayLogs,
@@ -117,6 +58,9 @@ class NutritionState {
       dinner: dinner ?? this.dinner,
       snacks: snacks ?? this.snacks,
       isLoading: isLoading ?? this.isLoading,
+      summary: summary ?? this.summary,
+      targetCalories: targetCalories ?? this.targetCalories,
+      weeklyScores: weeklyScores ?? this.weeklyScores,
     );
   }
 }
@@ -125,26 +69,7 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
   final Ref ref;
 
   NutritionNotifier(this.ref) : super(NutritionState(todayLogs: [])) {
-    _loadFromCache().then((_) => _init());
-  }
-
-  static const _cacheKey = 'nutrition_state_cache';
-
-  Future<void> _loadFromCache() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cached = prefs.getString(_cacheKey);
-      if (cached != null) {
-        // Simple heuristic for now: if we have cached data, show it first
-        // We'd need to serialize NutritionState to JSON for full restore
-        // For now, let's just make sure we don't overwrite if recent
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _saveToCache(NutritionState newState) async {
-     // Simplified caching: just save that we had data
-     // Real implementation would serialize the whole state
+    _init();
   }
 
   Future<void> _init() async {
@@ -159,6 +84,10 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       final db = ref.read(databaseServiceProvider);
       final today = DateTime.now();
       
+      // Fetch user metrics for dynamic calorie goal
+      final metrics = await db.getUserMetrics(user.uid);
+      final targetCalories = (metrics?.dailyCalorieGoal ?? 2000).round();
+      
       final logs = await db.getNutritionLogsForDate(user.uid, today);
       var plan = await db.getMealPlanForDate(user.uid, today);
 
@@ -166,11 +95,26 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
         plan = await _generatePlan(user.uid, today);
       }
 
-      _resolveRecipesAndSetState(logs, plan);
+      // Fetch weekly scores for the hormone-support chart
+      final weeklyScores = await _fetchWeeklyScores(user.uid, today);
+
+      _resolveRecipesAndSetState(logs, plan, targetCalories, weeklyScores);
     } catch (e) {
-      // Log error if needed
       state = state.copyWith(isLoading: false);
     }
+  }
+
+  Future<List<double?>> _fetchWeeklyScores(String userId, DateTime today) async {
+    final db = ref.read(databaseServiceProvider);
+    final scores = <double?>[];
+    
+    for (int i = 6; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      final dayLogs = await db.getNutritionLogsForDate(userId, date);
+      scores.add(NutritionEngine.calculateDayScore(dayLogs));
+    }
+    
+    return scores;
   }
 
   Future<DailyMealPlan> _generatePlan(String userId, DateTime date) async {
@@ -178,7 +122,6 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     final primaryPattern = pcosState?.analysis?.pattern ?? PcosPattern.none;
     final scores = pcosState?.analysis?.patternScores ?? {};
     
-    // Weighted approach: Get all patterns with significant scores
     final activePatterns = scores.entries
         .where((e) => e.value >= 3.0)
         .map((e) => e.key)
@@ -186,18 +129,14 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     
     if (activePatterns.isEmpty) activePatterns.add(primaryPattern);
 
-    // Filter recipes that match ANY of our significant patterns
     final allRecipes = RecipeRepository.getAllRecipes();
     final recipes = allRecipes.where((r) => 
       r.categories.any((c) => activePatterns.contains(c))
     ).toList();
 
-    // Strategy: Try to pick for the primary pattern first, fallback to any active
     Recipe pick(MealType type) {
       final typeMatch = recipes.where((r) => r.mealType == type).toList();
       if (typeMatch.isEmpty) return allRecipes.firstWhere((r) => r.mealType == type);
-      
-      // Prefer primary pattern if possible
       final primaryMatch = typeMatch.where((r) => r.categories.contains(primaryPattern)).toList();
       return primaryMatch.isNotEmpty ? primaryMatch.first : typeMatch.first;
     }
@@ -220,9 +159,23 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     return plan;
   }
 
-  void _resolveRecipesAndSetState(List<NutritionLog> logs, DailyMealPlan? plan) {
+  void _resolveRecipesAndSetState(
+    List<NutritionLog> logs,
+    DailyMealPlan? plan,
+    int targetCalories,
+    List<double?> weeklyScores,
+  ) {
     if (plan == null) {
-      state = state.copyWith(todayLogs: logs, isLoading: false);
+      state = state.copyWith(
+        todayLogs: logs, 
+        isLoading: false,
+        targetCalories: targetCalories,
+        weeklyScores: weeklyScores,
+        summary: NutritionEngine.calculateSummary(
+          logs: logs,
+          targetCalories: targetCalories,
+        ),
+      );
       return;
     }
 
@@ -232,6 +185,19 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     final dinner = allRecipes.firstWhere((r) => r.id == plan.dinnerRecipeId, orElse: () => allRecipes.first);
     final snacks = allRecipes.where((r) => plan.snackRecipeIds.contains(r.id)).toList();
 
+    final totalLogs = [...logs];
+    final loggedTypes = plan.loggedMealTypes;
+
+    if (!loggedTypes.contains(MealType.breakfast.name)) {
+      totalLogs.add(_recipeTypeToLog(breakfast, MealType.breakfast, plan.breakfastPortion));
+    }
+    if (!loggedTypes.contains(MealType.lunch.name)) {
+      totalLogs.add(_recipeTypeToLog(lunch, MealType.lunch, plan.lunchPortion));
+    }
+    if (!loggedTypes.contains(MealType.dinner.name)) {
+      totalLogs.add(_recipeTypeToLog(dinner, MealType.dinner, plan.dinnerPortion));
+    }
+
     state = state.copyWith(
       todayLogs: logs,
       currentPlan: plan,
@@ -240,12 +206,59 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       dinner: dinner,
       snacks: snacks,
       isLoading: false,
+      targetCalories: targetCalories,
+      weeklyScores: weeklyScores,
+      summary: NutritionEngine.calculateSummary(
+        logs: totalLogs,
+        targetCalories: targetCalories,
+      ),
     );
   }
 
-  Future<void> addCustomEntry(String name, int cal, double p, double c, double f) async {
+  NutritionLog _recipeTypeToLog(Recipe r, MealType type, double portion) {
+    return NutritionLog()
+      ..itemName = r.title
+      ..calories = (r.calories * portion).toInt()
+      ..protein = r.protein * portion
+      ..carbs = r.carbs * portion
+      ..fats = r.fats * portion
+      ..fiber = r.fiber * portion
+      ..glycemicIndex = r.glycemicIndex
+      ..pcosScore = MealScoringEngine.calculateMealScore(
+        name: r.title,
+        calories: r.calories * portion,
+        protein: r.protein * portion,
+        carbs: r.carbs * portion,
+        fats: r.fats * portion,
+        fiber: r.fiber * portion,
+        glycemicIndex: r.glycemicIndex,
+        glycemicLoad: MacroCalculator.calculateGlycemicLoad(r.glycemicIndex, r.carbs * portion),
+        processingLevel: r.processingLevel,
+      ).totalScore
+      ..type = type;
+  }
+
+  Future<void> addCustomEntry(String name, int cal, double p, double c, double f, {
+    double fiber = 0.0, 
+    double gi = 50.0,
+    double addedSugar = 0.0,
+    double processingLevel = 0.5,
+  }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
+    final score = MealScoringEngine.calculateMealScore(
+      name: name,
+      calories: cal.toDouble(),
+      protein: p,
+      carbs: c,
+      fats: f,
+      fiber: fiber,
+      glycemicIndex: gi,
+      glycemicLoad: MacroCalculator.calculateGlycemicLoad(gi, c),
+      addedSugar: addedSugar,
+      processingLevel: processingLevel,
+    );
 
     final log = NutritionLog()
       ..userId = user.uid
@@ -255,11 +268,14 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       ..protein = p
       ..carbs = c
       ..fats = f
+      ..fiber = fiber
+      ..glycemicIndex = gi
+      ..pcosScore = score.totalScore
       ..type = MealType.custom
       ..isCustom = true;
 
     await ref.read(databaseServiceProvider).saveNutritionLog(log);
-    _init(); // Refresh
+    _init(); 
   }
 
   Future<void> swapDish(MealType type, String newRecipeId) async {
@@ -292,7 +308,15 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       default: break;
     }
     await ref.read(databaseServiceProvider).saveMealPlan(plan);
-    _init();
+    // Immediately rebuild state with updated portions for real-time UI update
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final db = ref.read(databaseServiceProvider);
+    final logs = await db.getNutritionLogsForDate(user.uid, DateTime.now());
+    final metrics = await db.getUserMetrics(user.uid);
+    final targetCalories = (metrics?.dailyCalorieGoal ?? 2000).round();
+    final weeklyScores = await _fetchWeeklyScores(user.uid, DateTime.now());
+    _resolveRecipesAndSetState(logs, plan, targetCalories, weeklyScores);
   }
 
   Future<void> confirmMeal(MealType type, Recipe recipe, double portion) async {
@@ -300,8 +324,18 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     if (user == null || state.currentPlan == null) return;
 
     final plan = state.currentPlan!;
-    // Avoid double logging if already in the list
     if (plan.loggedMealTypes.contains(type.name)) return;
+
+    final score = MealScoringEngine.calculateMealScore(
+      name: recipe.title,
+      calories: recipe.calories * portion,
+      protein: recipe.protein * portion,
+      carbs: recipe.carbs * portion,
+      fats: recipe.fats * portion,
+      fiber: recipe.fiber * portion,
+      glycemicIndex: recipe.glycemicIndex,
+      glycemicLoad: MacroCalculator.calculateGlycemicLoad(recipe.glycemicIndex, recipe.carbs * portion),
+    );
 
     final log = NutritionLog()
       ..userId = user.uid
@@ -311,10 +345,12 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       ..protein = recipe.protein * portion
       ..carbs = recipe.carbs * portion
       ..fats = recipe.fats * portion
+      ..fiber = recipe.fiber * portion
+      ..glycemicIndex = recipe.glycemicIndex
+      ..pcosScore = score.totalScore
       ..type = type
       ..isCustom = false;
 
-    // Add to the list of logged types for this plan
     plan.loggedMealTypes = [...plan.loggedMealTypes, type.name];
 
     final db = ref.read(databaseServiceProvider);
@@ -328,14 +364,13 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     
-    final db = ref.read(databaseServiceProvider);
     final today = DateTime.now();
-    
     await _generatePlan(user.uid, today);
     _init();
   }
 }
 
 final nutritionProvider = StateNotifierProvider<NutritionNotifier, NutritionState>((ref) {
+  ref.watch(databaseServiceProvider);
   return NutritionNotifier(ref);
 });

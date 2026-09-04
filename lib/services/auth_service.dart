@@ -42,9 +42,9 @@ class AuthService {
       
       // Save login notification
       try {
-        final db = DatabaseService(); // Direct instance or use provider if possible
+        final db = DatabaseService(userCredential.user?.uid);
         final notification = AppNotification()
-          ..title = 'Welcome to Zaya! ✨'
+          ..title = 'Welcome to HerCycle Bloom! ✨'
           ..body = 'You have successfully signed in with ${userCredential.user?.email}.'
           ..timestamp = DateTime.now()
           ..category = 'auth';

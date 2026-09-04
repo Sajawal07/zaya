@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../providers/nutrition_provider.dart';
+import '../../domain/models/food_item.dart';
+import '../../data/repositories/food_repository.dart';
 import '../../domain/models/recipe.dart';
 import '../../data/repositories/recipe_repository.dart';
-import 'package:zaya/models/nutrition_enums.dart';
 
-enum AddFoodMode { options, custom, saved }
+enum AddFoodMode { options, search, custom, saved }
 
 class AddFoodSheet extends ConsumerStatefulWidget {
   const AddFoodSheet({super.key});
@@ -19,17 +20,40 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   AddFoodMode _mode = AddFoodMode.options;
   final _formKey = GlobalKey<FormState>();
   
+  // Search fields
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  FoodItem? _selectedFood;
+  double _servingSize = 1.0;
+  final List<double> _servingOptions = [0.5, 1.0, 1.5, 2.0, 3.0];
+  String _selectedServingLabel = '1 serving';
+
   // Custom Form fields
   String _customName = '';
   int _calories = 0;
   double _protein = 0;
   double _carbs = 0;
   double _fats = 0;
+  double _fiber = 0;
+  double _gi = 50.0;
 
   // Saved Food fields
-  String _searchQuery = '';
   Recipe? _selectedRecipe;
   double _quantity = 1.0;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<FoodItem> get _filteredFoods {
+    if (_searchQuery.isEmpty) return FoodRepository.getAll();
+    final q = _searchQuery.toLowerCase();
+    return FoodRepository.getAll().where((f) =>
+        f.name.toLowerCase().contains(q) ||
+        f.category.toLowerCase().contains(q)).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +89,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
 
   Widget _buildHeader() {
     String title = 'Log Food';
+    if (_mode == AddFoodMode.search) title = 'Search Foods';
     if (_mode == AddFoodMode.custom) title = 'Custom Entry';
     if (_mode == AddFoodMode.saved) title = 'Saved Foods';
 
@@ -73,7 +98,13 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         if (_mode != AddFoodMode.options)
           IconButton(
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-            onPressed: () => setState(() => _mode = AddFoodMode.options),
+            onPressed: () => setState(() {
+              _mode = AddFoodMode.options;
+              _selectedFood = null;
+              _selectedRecipe = null;
+              _searchQuery = '';
+              _searchController.clear();
+            }),
           ),
         Text(
           title,
@@ -92,6 +123,8 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     switch (_mode) {
       case AddFoodMode.options:
         return _buildOptions();
+      case AddFoodMode.search:
+        return _selectedFood == null ? _buildFoodSearch() : _buildFoodServingSelector();
       case AddFoodMode.custom:
         return _buildCustomForm();
       case AddFoodMode.saved:
@@ -103,16 +136,16 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     return Column(
       children: [
         _OptionTile(
-          icon: Icons.restaurant_rounded,
-          title: 'Add Custom Meal',
-          subtitle: 'Log a balanced meal manually',
-          onTap: () => setState(() => _mode = AddFoodMode.custom),
+          icon: Icons.search_rounded,
+          title: 'Search Food',
+          subtitle: 'Find foods with auto-filled nutrition info',
+          onTap: () => setState(() => _mode = AddFoodMode.search),
         ),
         const SizedBox(height: 12),
         _OptionTile(
-          icon: Icons.cookie_rounded,
-          title: 'Add Quick Snack',
-          subtitle: 'Log simple snacks and treats',
+          icon: Icons.restaurant_rounded,
+          title: 'Add Custom Meal',
+          subtitle: 'Enter nutrition values manually',
           onTap: () => setState(() => _mode = AddFoodMode.custom),
         ),
         const SizedBox(height: 12),
@@ -125,6 +158,229 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
       ],
     );
   }
+
+  // ── Food Search ──────────────────────────────────────────────────────────
+
+  Widget _buildFoodSearch() {
+    final foods = _filteredFoods;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Search foods (e.g. paratha, egg, dal...)',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+          ),
+          onChanged: (v) => setState(() => _searchQuery = v),
+        ),
+        const SizedBox(height: 8),
+        if (_searchQuery.isNotEmpty && foods.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 48, color: AppColors.textSecondary.withValues(alpha: 0.4)),
+                  const SizedBox(height: 12),
+                  Text('No foods found for "$_searchQuery"',
+                      style: const TextStyle(color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => setState(() => _mode = AddFoodMode.custom),
+                    child: const Text('Add as custom entry'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: foods.length,
+            itemBuilder: (context, index) {
+              final food = foods[index];
+              return _FoodTile(
+                food: food,
+                onTap: () => setState(() => _selectedFood = food),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  // ── Food Serving Selector ────────────────────────────────────────────────
+
+  Widget _buildFoodServingSelector() {
+    final food = _selectedFood!;
+    final scaledCalories = (food.calories * _servingSize).toInt();
+    final scaledProtein = food.protein * _servingSize;
+    final scaledCarbs = food.carbs * _servingSize;
+    final scaledFats = food.fats * _servingSize;
+    final scaledFiber = food.fiber * _servingSize;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Food info card
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.oldLace,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.nudeRose.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.restaurant_rounded, color: AppColors.nudeRose, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(food.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        if (food.isHormoneFriendly)
+                          const Text('PCOS Friendly', style: TextStyle(fontSize: 11, color: AppColors.fertileGreen, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Nutrition preview per 1 serving
+              Text('Per 1 serving:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _NutrientPill('${food.calories}', 'kcal', AppColors.nudeRose),
+                  _NutrientPill('${food.protein.toStringAsFixed(1)}g', 'P', AppColors.fertileGreen),
+                  _NutrientPill('${food.carbs.toStringAsFixed(1)}g', 'C', AppColors.mistySage),
+                  _NutrientPill('${food.fats.toStringAsFixed(1)}g', 'F', AppColors.pregnancyGold),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        // Serving size selector
+        const Text('Serving Size', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 12),
+        Row(
+          children: _servingOptions.map((size) {
+            final isSelected = _servingSize == size;
+            final label = size == 0.5 ? '0.5x' : size == 1.0 ? '1x' : '${size.toStringAsFixed(1)}x';
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _servingSize = size;
+                  _selectedServingLabel = '$label serving${size != 1.0 ? 's' : ''}';
+                }),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.nudeRose : AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? AppColors.nudeRose : AppColors.mistySage.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? AppColors.white : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 24),
+
+        // Scaled nutrition preview
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.fertileGreen.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Total for $_selectedServingLabel', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text('$scaledCalories kcal', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.fertileGreen)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _NutrientPill('${scaledProtein.toStringAsFixed(1)}g', 'Protein', AppColors.nudeRose),
+                  _NutrientPill('${scaledCarbs.toStringAsFixed(1)}g', 'Carbs', AppColors.mistySage),
+                  _NutrientPill('${scaledFats.toStringAsFixed(1)}g', 'Fats', AppColors.pregnancyGold),
+                  _NutrientPill('${scaledFiber.toStringAsFixed(1)}g', 'Fiber', AppColors.fertileGreen),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
+        
+        // Add button
+        ElevatedButton(
+          onPressed: () {
+            ref.read(nutritionProvider.notifier).addCustomEntry(
+              food.name,
+              scaledCalories,
+              scaledProtein,
+              scaledCarbs,
+              scaledFats,
+              fiber: scaledFiber,
+              gi: food.glycemicIndex,
+              processingLevel: food.processingLevel,
+            );
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56),
+            backgroundColor: AppColors.nudeRose,
+            foregroundColor: AppColors.white,
+          ),
+          child: const Text('Add to Log', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+
+  // ── Custom Form ──────────────────────────────────────────────────────────
 
   Widget _buildCustomForm() {
     final double totalMacros = _protein + _carbs + _fats;
@@ -181,6 +437,18 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMacroField('Fiber', 'Fiber (g)', (v) => _fiber = v),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMacroField('GI', 'GI (0-100)', (v) => _gi = v),
+              ),
+            ],
+          ),
           
           if (totalMacros > 0) ...[
             const SizedBox(height: 24),
@@ -192,14 +460,15 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
             onPressed: !isValid ? null : () {
               if (_formKey.currentState!.validate()) {
                 ref.read(nutritionProvider.notifier).addCustomEntry(
-                  _customName, _calories, _protein, _carbs, _fats
+                  _customName, _calories, _protein, _carbs, _fats,
+                  fiber: _fiber, gi: _gi,
                 );
                 Navigator.pop(context);
               }
             },
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
-              backgroundColor: isValid ? AppColors.nudeRose : AppColors.mistySage.withOpacity(0.3),
+              backgroundColor: isValid ? AppColors.nudeRose : AppColors.mistySage.withValues(alpha: 0.3),
               foregroundColor: AppColors.white,
               elevation: isValid ? 2 : 0,
             ),
@@ -226,7 +495,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.oldLace.withOpacity(0.5),
+        color: AppColors.oldLace.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -272,6 +541,8 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     );
   }
 
+  // ── Saved Food List ──────────────────────────────────────────────────────
+
   Widget _buildSavedFoodList() {
     final recipes = RecipeRepository.getAllRecipes().where((r) => 
       r.title.toLowerCase().contains(_searchQuery.toLowerCase())
@@ -302,12 +573,12 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
             },
           )
         else
-          _buildQuantitySelector(),
+          _buildRecipeQuantitySelector(),
       ],
     );
   }
 
-  Widget _buildQuantitySelector() {
+  Widget _buildRecipeQuantitySelector() {
     return Column(
       children: [
         Container(
@@ -371,6 +642,64 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   }
 }
 
+// ── Support Widgets ──────────────────────────────────────────────────────────
+
+class _FoodTile extends StatelessWidget {
+  final FoodItem food;
+  final VoidCallback onTap;
+
+  const _FoodTile({required this.food, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: food.isHormoneFriendly
+              ? AppColors.fertileGreen.withValues(alpha: 0.1)
+              : AppColors.oldLace,
+          shape: BoxShape.circle,
+        ),
+        child: Center(
+          child: Icon(
+            Icons.restaurant_rounded,
+            size: 18,
+            color: food.isHormoneFriendly ? AppColors.fertileGreen : AppColors.textSecondary,
+          ),
+        ),
+      ),
+      title: Text(food.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(
+        '${food.calories} kcal • P: ${food.protein.toStringAsFixed(0)}g • C: ${food.carbs.toStringAsFixed(0)}g • F: ${food.fats.toStringAsFixed(0)}g',
+        style: const TextStyle(fontSize: 12),
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+    );
+  }
+}
+
+class _NutrientPill extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+
+  const _NutrientPill(this.value, this.label, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+      ],
+    );
+  }
+}
+
 class _OptionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -392,7 +721,7 @@ class _OptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.mistySage.withOpacity(0.2)),
+          border: Border.all(color: AppColors.mistySage.withValues(alpha: 0.2)),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -400,7 +729,7 @@ class _OptionTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.nudeRose.withOpacity(0.1),
+                color: AppColors.nudeRose.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: AppColors.nudeRose),

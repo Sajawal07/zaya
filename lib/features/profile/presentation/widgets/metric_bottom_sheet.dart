@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:zaya/core/app_colors.dart';
-import 'package:zaya/models/user_metrics.dart';
+import 'package:hercycle_bloom/core/app_colors.dart';
+import 'package:hercycle_bloom/models/user_metrics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zaya/providers/database_provider.dart';
+import 'package:hercycle_bloom/providers/database_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:zaya/providers/metrics_provider.dart';
+import 'package:hercycle_bloom/providers/metrics_provider.dart';
+import 'package:hercycle_bloom/providers/wellness_provider.dart';
 
 class MetricBottomSheet extends ConsumerStatefulWidget {
   final UserMetrics? initialMetrics;
@@ -77,6 +78,8 @@ class _MetricBottomSheetState extends ConsumerState<MetricBottomSheet> {
                   metrics.lastUpdated = DateTime.now();
                   await db.saveUserMetrics(metrics);
                   ref.invalidate(userMetricsProvider);
+                  // Also save weight to WellnessLog for history tracking
+                  await ref.read(wellnessProvider.notifier).logWellness(weight: weight);
                   if (context.mounted) Navigator.pop(context);
                 }
               }

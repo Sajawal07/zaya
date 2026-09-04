@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:zaya/core/app_colors.dart';
+import 'package:hercycle_bloom/core/app_colors.dart';
 import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -147,7 +147,7 @@ class OnboardingPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.nudeRose.withOpacity(0.1),
+                  color: AppColors.nudeRose.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),

@@ -37,34 +37,49 @@ const NutritionLogSchema = CollectionSchema(
       name: r'fats',
       type: IsarType.double,
     ),
-    r'isCustom': PropertySchema(
+    r'fiber': PropertySchema(
       id: 4,
+      name: r'fiber',
+      type: IsarType.double,
+    ),
+    r'glycemicIndex': PropertySchema(
+      id: 5,
+      name: r'glycemicIndex',
+      type: IsarType.double,
+    ),
+    r'isCustom': PropertySchema(
+      id: 6,
       name: r'isCustom',
       type: IsarType.bool,
     ),
     r'itemName': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'itemName',
       type: IsarType.string,
     ),
+    r'pcosScore': PropertySchema(
+      id: 8,
+      name: r'pcosScore',
+      type: IsarType.double,
+    ),
     r'protein': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'protein',
       type: IsarType.double,
     ),
     r'quantity': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'quantity',
       type: IsarType.double,
     ),
     r'type': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'type',
       type: IsarType.string,
       enumMap: _NutritionLogtypeEnumValueMap,
     ),
     r'userId': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'userId',
       type: IsarType.string,
     )
@@ -105,12 +120,15 @@ void _nutritionLogSerialize(
   writer.writeDouble(offsets[1], object.carbs);
   writer.writeDateTime(offsets[2], object.date);
   writer.writeDouble(offsets[3], object.fats);
-  writer.writeBool(offsets[4], object.isCustom);
-  writer.writeString(offsets[5], object.itemName);
-  writer.writeDouble(offsets[6], object.protein);
-  writer.writeDouble(offsets[7], object.quantity);
-  writer.writeString(offsets[8], object.type.name);
-  writer.writeString(offsets[9], object.userId);
+  writer.writeDouble(offsets[4], object.fiber);
+  writer.writeDouble(offsets[5], object.glycemicIndex);
+  writer.writeBool(offsets[6], object.isCustom);
+  writer.writeString(offsets[7], object.itemName);
+  writer.writeDouble(offsets[8], object.pcosScore);
+  writer.writeDouble(offsets[9], object.protein);
+  writer.writeDouble(offsets[10], object.quantity);
+  writer.writeString(offsets[11], object.type.name);
+  writer.writeString(offsets[12], object.userId);
 }
 
 NutritionLog _nutritionLogDeserialize(
@@ -124,15 +142,18 @@ NutritionLog _nutritionLogDeserialize(
   object.carbs = reader.readDouble(offsets[1]);
   object.date = reader.readDateTime(offsets[2]);
   object.fats = reader.readDouble(offsets[3]);
+  object.fiber = reader.readDouble(offsets[4]);
+  object.glycemicIndex = reader.readDouble(offsets[5]);
   object.id = id;
-  object.isCustom = reader.readBool(offsets[4]);
-  object.itemName = reader.readString(offsets[5]);
-  object.protein = reader.readDouble(offsets[6]);
-  object.quantity = reader.readDouble(offsets[7]);
+  object.isCustom = reader.readBool(offsets[6]);
+  object.itemName = reader.readString(offsets[7]);
+  object.pcosScore = reader.readDoubleOrNull(offsets[8]);
+  object.protein = reader.readDouble(offsets[9]);
+  object.quantity = reader.readDouble(offsets[10]);
   object.type =
-      _NutritionLogtypeValueEnumMap[reader.readStringOrNull(offsets[8])] ??
+      _NutritionLogtypeValueEnumMap[reader.readStringOrNull(offsets[11])] ??
           MealType.breakfast;
-  object.userId = reader.readString(offsets[9]);
+  object.userId = reader.readString(offsets[12]);
   return object;
 }
 
@@ -152,17 +173,23 @@ P _nutritionLogDeserializeProp<P>(
     case 3:
       return (reader.readDouble(offset)) as P;
     case 4:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 5:
-      return (reader.readString(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 6:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 8:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 9:
+      return (reader.readDouble(offset)) as P;
+    case 10:
+      return (reader.readDouble(offset)) as P;
+    case 11:
       return (_NutritionLogtypeValueEnumMap[reader.readStringOrNull(offset)] ??
           MealType.breakfast) as P;
-    case 9:
+    case 12:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -514,6 +541,135 @@ extension NutritionLogQueryFilter
     });
   }
 
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition> fiberEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'fiber',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      fiberGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'fiber',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition> fiberLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'fiber',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition> fiberBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'fiber',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      glycemicIndexEqualTo(
+    double value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'glycemicIndex',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      glycemicIndexGreaterThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'glycemicIndex',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      glycemicIndexLessThan(
+    double value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'glycemicIndex',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      glycemicIndexBetween(
+    double lower,
+    double upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'glycemicIndex',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -709,6 +865,90 @@ extension NutritionLogQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'itemName',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'pcosScore',
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'pcosScore',
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'pcosScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'pcosScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'pcosScore',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterFilterCondition>
+      pcosScoreBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'pcosScore',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -1171,6 +1411,31 @@ extension NutritionLogQuerySortBy
     });
   }
 
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByFiber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fiber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByFiberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fiber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByGlycemicIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'glycemicIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy>
+      sortByGlycemicIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'glycemicIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByIsCustom() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isCustom', Sort.asc);
@@ -1192,6 +1457,18 @@ extension NutritionLogQuerySortBy
   QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByItemNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'itemName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByPcosScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pcosScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> sortByPcosScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pcosScore', Sort.desc);
     });
   }
 
@@ -1294,6 +1571,31 @@ extension NutritionLogQuerySortThenBy
     });
   }
 
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByFiber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fiber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByFiberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'fiber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByGlycemicIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'glycemicIndex', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy>
+      thenByGlycemicIndexDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'glycemicIndex', Sort.desc);
+    });
+  }
+
   QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1327,6 +1629,18 @@ extension NutritionLogQuerySortThenBy
   QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByItemNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'itemName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByPcosScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pcosScore', Sort.asc);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QAfterSortBy> thenByPcosScoreDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'pcosScore', Sort.desc);
     });
   }
 
@@ -1405,6 +1719,19 @@ extension NutritionLogQueryWhereDistinct
     });
   }
 
+  QueryBuilder<NutritionLog, NutritionLog, QDistinct> distinctByFiber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'fiber');
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QDistinct>
+      distinctByGlycemicIndex() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'glycemicIndex');
+    });
+  }
+
   QueryBuilder<NutritionLog, NutritionLog, QDistinct> distinctByIsCustom() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isCustom');
@@ -1415,6 +1742,12 @@ extension NutritionLogQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'itemName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<NutritionLog, NutritionLog, QDistinct> distinctByPcosScore() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'pcosScore');
     });
   }
 
@@ -1477,6 +1810,18 @@ extension NutritionLogQueryProperty
     });
   }
 
+  QueryBuilder<NutritionLog, double, QQueryOperations> fiberProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'fiber');
+    });
+  }
+
+  QueryBuilder<NutritionLog, double, QQueryOperations> glycemicIndexProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'glycemicIndex');
+    });
+  }
+
   QueryBuilder<NutritionLog, bool, QQueryOperations> isCustomProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isCustom');
@@ -1486,6 +1831,12 @@ extension NutritionLogQueryProperty
   QueryBuilder<NutritionLog, String, QQueryOperations> itemNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'itemName');
+    });
+  }
+
+  QueryBuilder<NutritionLog, double?, QQueryOperations> pcosScoreProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'pcosScore');
     });
   }
 

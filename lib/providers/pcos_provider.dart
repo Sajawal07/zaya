@@ -110,5 +110,6 @@ class PcosNotifier extends StateNotifier<AsyncValue<PcosState>> {
 }
 
 final pcosProvider = StateNotifierProvider<PcosNotifier, AsyncValue<PcosState>>((ref) {
+  ref.watch(databaseServiceProvider);
   return PcosNotifier(ref);
 });

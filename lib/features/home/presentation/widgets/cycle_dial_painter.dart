@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:zaya/core/app_colors.dart';
+import 'package:hercycle_bloom/core/app_colors.dart';
 
 class CycleDialPainter extends CustomPainter {
   final int currentDay;
@@ -34,7 +34,7 @@ class CycleDialPainter extends CustomPainter {
         ..shader = LinearGradient(
           colors: [
             AppColors.pregnancyGold,
-            AppColors.pregnancyGold.withOpacity(0.6),
+            AppColors.pregnancyGold.withValues(alpha: 0.6),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
@@ -70,7 +70,7 @@ class CycleDialPainter extends CustomPainter {
         ..shader = LinearGradient(
           colors: [
             phaseColor,
-            phaseColor.withOpacity(0.6),
+            phaseColor.withValues(alpha: 0.6),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: radius))
         ..style = PaintingStyle.stroke
@@ -92,7 +92,7 @@ class CycleDialPainter extends CustomPainter {
 
     // Outer glow effect
     final glowPaint = Paint()
-      ..color = AppColors.nudeRose.withOpacity(0.1)
+      ..color = AppColors.nudeRose.withValues(alpha: 0.1)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -103,7 +103,7 @@ class CycleDialPainter extends CustomPainter {
   void _drawPhaseMarkers(Canvas canvas, Offset center, double radius, double strokeWidth) {
     // Draw subtle markers for key days
     final markerPaint = Paint()
-      ..color = AppColors.textSecondary.withOpacity(0.3)
+      ..color = AppColors.textSecondary.withValues(alpha: 0.3)
       ..style = PaintingStyle.fill;
 
     // Period end marker (day 5)

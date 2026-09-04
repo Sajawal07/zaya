@@ -1,5 +1,7 @@
 
+import '../../../core/cycle_math.dart';
 import '../domain/models/pregnancy_week_info.dart';
+
 
 class PregnancyService {
   
@@ -19,7 +21,8 @@ class PregnancyService {
       startOfPregnancy = dueDate!.subtract(const Duration(days: 280));
     }
 
-    final difference = now.difference(startOfPregnancy).inDays;
+    final difference = CycleMath.daysBetween(startOfPregnancy, now);
+
     
     // Ensure we don't show negative days (future dates)
     if (difference < 0) return {'week': 0, 'day': 0};

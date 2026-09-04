@@ -4,7 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../models/cycle_log.dart';
+import '../../../../models/user_metrics.dart';
 import '../../../../providers/database_provider.dart';
+import '../../../../providers/cycle_provider.dart';
+import '../../../../providers/sync_provider.dart';
+import '../../../../services/notification_service.dart';
+import '../../../../services/cycle_update_handler.dart';
+import '../../../../shared/widgets/app_loader.dart';
 
 
 class LogsScreen extends ConsumerWidget {
@@ -37,7 +43,7 @@ class LogsScreen extends ConsumerWidget {
           future: db.getAllLogs(FirebaseAuth.instance.currentUser?.uid ?? ''),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const AppLoaderCentered();
             }
 
             final logs = snapshot.data ?? [];
@@ -54,7 +60,7 @@ class LogsScreen extends ConsumerWidget {
                         Icon(
                           Icons.history_rounded,
                           size: 80,
-                          color: AppColors.nudeRose.withOpacity(0.3),
+                          color: AppColors.nudeRose.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -124,7 +130,7 @@ class _LogCard extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.nudeRose.withOpacity(0.2),
+                          color: AppColors.nudeRose.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Text(
@@ -136,6 +142,54 @@ class _LogCard extends ConsumerWidget {
                           ),
                         ),
                       ),
+                    if (log.isPeriodStart) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.edit_calendar, size: 20),
+                        color: AppColors.nudeRose,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () async {
+                          final newDate = await showDatePicker(
+                            context: context,
+                            initialDate: log.date,
+                            firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                            lastDate: DateTime.now(),
+                          );
+                          if (newDate != null && newDate != log.date && context.mounted) {
+                            final db = ref.read(databaseServiceProvider);
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user == null) return;
+
+                            final duplicate = await db.getPeriodStartForDate(user.uid, newDate);
+                            if (duplicate != null) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Period already logged for that date.'),
+                                    backgroundColor: Color(0xFFD47A8E),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
+
+                            await db.updateCycleLogDate(log.id, newDate);
+                            await CycleUpdateHandler.onCycleDataChanged(ref, user.uid);
+
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Period date updated to ${newDate.month}/${newDate.day}/${newDate.year}.'),
+                                  backgroundColor: AppColors.periodRed,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -201,7 +255,7 @@ class _MetricChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -233,7 +287,7 @@ class _SymptomChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.mistySage.withOpacity(0.3)),
+        border: Border.all(color: AppColors.mistySage.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

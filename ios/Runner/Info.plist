@@ -5,7 +5,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Zaya Wellness</string>
+		<string>HerCycle Bloom</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 		<key>CFBundleInfoDictionaryVersion</key>
 		<string>6.0</string>
 		<key>CFBundleName</key>
-		<string>Zaya Wellness</string>
+		<string>HerCycle Bloom</string>
 		<key>CFBundlePackageType</key>
 		<string>APPL</string>
 		<key>CFBundleShortVersionString</key>
@@ -41,17 +41,19 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Zaya needs access to your photo library to analyze your meal photos for nutritional tracking.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Zaya needs camera access to scan your meal plate and provide instant nutritional analysis.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Zaya does not use the microphone directly, but it may be required by the underlying camera platform.</string>
-	<key>UIStatusBarHidden</key>
-	<false/>
+		<key>CADisableMinimumFrameDurationOnPhone</key>
+		<true/>
+		<key>UIApplicationSupportsIndirectInputEvents</key>
+		<true/>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>HerCycle Bloom needs access to your photo library to analyze your meal photos for nutritional tracking.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>HerCycle Bloom needs camera access to scan your meal plate and provide instant nutritional analysis.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>HerCycle Bloom does not use the microphone directly, but it may be required by the underlying camera platform.</string>
+		<key>UIStatusBarHidden</key>
+		<true/>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<false/>
 	</dict>
 </plist>

@@ -4,6 +4,7 @@ import '../../../../core/app_colors.dart';
 import '../../../../providers/pcos_provider.dart';
 import '../../domain/models/pcos_guidance.dart';
 import '../../domain/services/pcos_analyzer.dart';
+import '../../../../shared/widgets/app_loader.dart';
 
 class PcosAnalysisScreen extends ConsumerWidget {
   const PcosAnalysisScreen({super.key});
@@ -20,7 +21,7 @@ class PcosAnalysisScreen extends ConsumerWidget {
         elevation: 0,
       ),
       body: pcosState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoaderCentered(),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (state) => _buildContent(context, ref, state),
       ),
@@ -72,9 +73,9 @@ class PcosAnalysisScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.05),
+        color: AppColors.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.error.withOpacity(0.1)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -84,7 +85,7 @@ class PcosAnalysisScreen extends ConsumerWidget {
             child: Text(
               'This is not a medical diagnosis. Please consult a healthcare professional for proper evaluation.',
               style: TextStyle(
-                color: AppColors.error.withOpacity(0.8),
+                color: AppColors.error.withValues(alpha: 0.8),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -159,7 +160,7 @@ class PcosAnalysisScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Divider(color: AppColors.mistySage.withOpacity(0.2), height: 20),
+        Divider(color: AppColors.mistySage.withValues(alpha: 0.2), height: 20),
         Text(
           'Analysis Result',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(fontSize: 22),
@@ -171,7 +172,7 @@ class PcosAnalysisScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.oldLace,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.nudeRose.withOpacity(0.2)),
+            border: Border.all(color: AppColors.nudeRose.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +245,7 @@ class PcosAnalysisScreen extends ConsumerWidget {
       child: Column(
         children: [
           const SizedBox(height: 48),
-          Icon(Icons.analytics_outlined, size: 64, color: AppColors.mistySage.withOpacity(0.5)),
+          Icon(Icons.analytics_outlined, size: 64, color: AppColors.mistySage.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text(
             'Select your symptoms to see analysis',
@@ -295,7 +296,7 @@ class _SymptomChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       onSelected: onSelected,
-      selectedColor: AppColors.nudeRose.withOpacity(0.2),
+      selectedColor: AppColors.nudeRose.withValues(alpha: 0.2),
       checkmarkColor: AppColors.nudeRose,
       backgroundColor: AppColors.white,
       labelStyle: TextStyle(
@@ -306,7 +307,7 @@ class _SymptomChip extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? AppColors.nudeRose : AppColors.mistySage.withOpacity(0.3),
+          color: isSelected ? AppColors.nudeRose : AppColors.mistySage.withValues(alpha: 0.3),
         ),
       ),
     );

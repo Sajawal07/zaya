@@ -23,7 +23,7 @@ class RecipeCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppColors.mistySage.withOpacity(0.1),
+              color: AppColors.mistySage.withValues(alpha: 0.1),
               spreadRadius: 2,
               blurRadius: 10,
               offset: const Offset(0, 4),
@@ -51,7 +51,7 @@ class RecipeCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.9),
+                        color: AppColors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -96,7 +96,7 @@ class RecipeCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.mistySage.withOpacity(0.2),
+                          color: AppColors.mistySage.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -119,13 +119,17 @@ class RecipeCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 12),
-                  // Nutrition badges
-                  Row(
-                    children: [
-                      _buildBadge(context, 'Protein ${recipe.protein}g', AppColors.nudeRose),
-                      const SizedBox(width: 8),
-                      _buildBadge(context, 'Low GI', AppColors.fertileGreen),
-                    ],
+                  // Nutrition badges & Score
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ...recipe.pcosTags.map((tag) => _buildBadge(context, tag, AppColors.fertileGreen)),
+                        _buildBadge(context, 'Hormone Balanced', AppColors.nudeRose),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -151,9 +155,9 @@ class RecipeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
