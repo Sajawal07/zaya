@@ -922,7 +922,63 @@ class _WellnessRadarChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final analytics = ref.watch(healthAnalyticsProvider);
+    
+    // Show empty state when insufficient data
+    if (!analytics.hasEnoughData) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
+        ),
+        child: Column(
+          children: [
+            const Expanded(child: _SectionTitle('Wellness Analysis')),
+            const SizedBox(height: 24),
+            Icon(
+              Icons.favorite_outline_rounded,
+              size: 64,
+              color: AppColors.nudeRose.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Not enough data yet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Log your daily wellness for at least 7 days to see your personalized analysis.\nCurrently: ${analytics.loggedDays} day(s) logged.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textSecondary.withValues(alpha: 0.7),
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Show grayed-out radar preview
+            SizedBox(
+              width: 240,
+              height: 240,
+              child: CustomPaint(
+                painter: _WellnessRadarPainter(
+                  matrix: analytics.wellnessMatrix,
+                  hasData: analytics.hasData,
+                  showPreview: true,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final matrix = analytics.wellnessMatrix;
+    final hasData = analytics.hasData;
     final avg = matrix.values.fold(0.0, (a, b) => a + b) / matrix.length;
 
     String status = 'Stable';
@@ -938,6 +994,11 @@ class _WellnessRadarChart extends ConsumerWidget {
       status = 'Needs Attention';
       statusColor = AppColors.error;
     }
+
+    // Dynamic logging period text
+    final daysText = analytics.loggedDays == 1 
+        ? 'Based on 1 day of logging'
+        : 'Based on ${analytics.loggedDays} days of logging';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -975,13 +1036,13 @@ class _WellnessRadarChart extends ConsumerWidget {
               width: 240,
               height: 240,
               child: CustomPaint(
-                painter: _WellnessRadarPainter(matrix: matrix),
+                painter: _WellnessRadarPainter(matrix: matrix, hasData: hasData),
               ),
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'Based on your last 30 days of logging',
+            daysText,
             style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6), fontSize: 11),
           ),
         ],
@@ -992,7 +1053,9 @@ class _WellnessRadarChart extends ConsumerWidget {
 
 class _WellnessRadarPainter extends CustomPainter {
   final Map<String, double> matrix;
-  _WellnessRadarPainter({required this.matrix});
+  final Map<String, bool>? hasData;
+  final bool showPreview;
+  _WellnessRadarPainter({required this.matrix, this.hasData, this.showPreview = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1021,8 +1084,10 @@ class _WellnessRadarPainter extends CustomPainter {
 
     final points = <Offset>[];
     for (int i = 0; i < axes.length; i++) {
-      final val = (matrix[axes[i]] ?? 0.5).clamp(0.1, 1.0);
-      final r = radius * val;
+      final label = axes[i];
+      final val = (matrix[label] ?? 0.0).clamp(0.0, 1.0);
+      final hasCategoryData = hasData?[label] ?? false;
+      final r = radius * (hasCategoryData ? val : 0.0);
       final x = center.dx + r * Math.cos(i * angleStep - 3.14159 / 2);
       final y = center.dy + r * Math.sin(i * angleStep - 3.14159 / 2);
       points.add(Offset(x, y));
@@ -1056,58 +1121,101 @@ class _WellnessRadarPainter extends CustomPainter {
     for (int i = 0; i < axes.length; i++) {
       final label = axes[i];
       final color = categoryColors[label] ?? AppColors.textSecondary;
-      final val = (matrix[label] ?? 0.5).clamp(0.1, 1.0);
-      final r = radius * val;
+      final val = (matrix[label] ?? 0.0).clamp(0.0, 1.0);
+      final hasCategoryData = hasData?[label] ?? false;
+      final r = radius * (hasCategoryData ? val : 0.0);
       
       final startAngle = i * segmentAngle - 3.14159 / 2 - (segmentAngle * 0.4);
       final endAngle = (i + 1) * segmentAngle - 3.14159 / 2 - (segmentAngle * 0.6);
 
-      // Draw the Petal (Wedge)
-      final petalPath = Path();
-      petalPath.moveTo(center.dx, center.dy);
-      petalPath.arcTo(
-        Rect.fromCircle(center: center, radius: r),
-        i * segmentAngle - 3.14159 / 2 - (segmentAngle / 2),
-        segmentAngle * 0.9, // Small gap between petals
-        false,
-      );
-      petalPath.close();
+      // Draw the Petal (Wedge) - only if has data, otherwise draw gray placeholder
+      if (hasCategoryData) {
+        final petalPath = Path();
+        petalPath.moveTo(center.dx, center.dy);
+        petalPath.arcTo(
+          Rect.fromCircle(center: center, radius: r),
+          startAngle,
+          segmentAngle * 0.8,
+          true,
+        );
+        petalPath.close();
 
-      // Layered effect with gradient
-      canvas.drawPath(
-        petalPath,
-        Paint()
-          ..shader = RadialGradient(
-            colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.6)],
-          ).createShader(Rect.fromCircle(center: center, radius: radius))
-          ..style = PaintingStyle.fill,
-      );
+        canvas.drawPath(petalPath, Paint()
+          ..shader = LinearGradient(
+            colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.1)],
+            begin: Alignment.center,
+            end: Alignment(0.8, 0.8),
+          ).createShader(Rect.fromCircle(center: center, radius: r))
+          ..style = PaintingStyle.fill);
+      } else if (showPreview) {
+        // Draw grayed-out placeholder for missing categories in preview
+        final previewPath = Path();
+        previewPath.moveTo(center.dx, center.dy);
+        previewPath.arcTo(
+          Rect.fromCircle(center: center, radius: radius * 0.15),
+          startAngle,
+          segmentAngle * 0.8,
+          true,
+        );
+        previewPath.close();
+        canvas.drawPath(previewPath, Paint()
+          ..color = AppColors.textSecondary.withValues(alpha: 0.08)
+          ..style = PaintingStyle.fill);
+      }
 
-      // Outer border of the petal
-      canvas.drawPath(
-        petalPath,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
-      );
-
-      // Label position
-      final labelR = radius + 30;
-      final labelX = center.dx + labelR * Math.cos(i * segmentAngle - 3.14159 / 2);
-      final labelY = center.dy + labelR * Math.sin(i * segmentAngle - 3.14159 / 2);
+      // Draw category label
+      final labelAngle = i * segmentAngle - 3.14159 / 2;
+      final labelRadius = radius + 24;
+      final labelX = center.dx + labelRadius * Math.cos(labelAngle);
+      final labelY = center.dy + labelRadius * Math.sin(labelAngle);
       
-      final textPainter = TextPainter(textDirection: TextDirection.ltr);
-      textPainter.text = TextSpan(
-        text: label,
-        style: GoogleFonts.montserrat(
-          fontSize: 8.5,
-          fontWeight: FontWeight.bold,
-          color: color,
+      final textColor = hasCategoryData ? color : AppColors.textSecondary.withValues(alpha: 0.4);
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 11,
+            fontWeight: hasCategoryData ? FontWeight.w600 : FontWeight.normal,
+          ),
         ),
+        textDirection: TextDirection.ltr,
       );
       textPainter.layout();
       textPainter.paint(canvas, Offset(labelX - textPainter.width / 2, labelY - textPainter.height / 2));
+    }
+
+    // Draw connecting lines for the data polygon (only connecting categories with data)
+    if (!showPreview) {
+      final validPoints = <Offset>[];
+      for (int i = 0; i < axes.length; i++) {
+        if (hasData?[axes[i]] ?? false) {
+          validPoints.add(points[i]);
+        }
+      }
+      
+      if (validPoints.length >= 2) {
+        final polygonPath = Path();
+        polygonPath.moveTo(validPoints.first.dx, validPoints.first.dy);
+        for (int i = 1; i < validPoints.length; i++) {
+          polygonPath.lineTo(validPoints[i].dx, validPoints[i].dy);
+        }
+        polygonPath.close();
+
+        canvas.drawPath(polygonPath, Paint()
+          ..shader = LinearGradient(
+            colors: [
+              AppColors.nudeRose.withValues(alpha: 0.3),
+              AppColors.fertileGreen.withValues(alpha: 0.3),
+            ],
+          ).createShader(Rect.fromCircle(center: center, radius: radius))
+          ..style = PaintingStyle.fill);
+
+        canvas.drawPath(polygonPath, Paint()
+          ..color = AppColors.nudeRose.withValues(alpha: 0.6)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2);
+      }
     }
   }
 

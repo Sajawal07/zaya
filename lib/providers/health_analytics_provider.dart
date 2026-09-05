@@ -10,6 +10,12 @@ class HealthAnalytics {
   final String insight;
   /// 6 keys: Cycle, Symptoms, Diet, Activity, Stress, Sleep (values 0.0 - 1.0)
   final Map<String, double> wellnessMatrix;
+  /// Categories that have actual logged data
+  final Map<String, bool> hasData;
+  /// Whether there's enough data for meaningful analysis (7+ days)
+  final bool hasEnoughData;
+  /// Actual number of days with logged data
+  final int loggedDays;
 
   HealthAnalytics({
     this.weightTrend = const [],
@@ -17,21 +23,38 @@ class HealthAnalytics {
     this.moodTrend = const [],
     this.crampsTrend = const [],
     this.topSymptom = 'None',
-    this.insight = 'Logging daily helps decode your body\'s messages.',
+    this.insight = 'Start logging daily wellness to see your personalized analysis.',
     this.wellnessMatrix = const {
-      'Cycle': 0.7,
-      'Symptoms': 0.8,
-      'Diet': 0.6,
-      'Activity': 0.5,
-      'Stress': 0.7,
-      'Sleep': 0.8,
+      'Cycle': 0.0,
+      'Symptoms': 0.0,
+      'Diet': 0.0,
+      'Activity': 0.0,
+      'Stress': 0.0,
+      'Sleep': 0.0,
     },
+    this.hasData = const {
+      'Cycle': false,
+      'Symptoms': false,
+      'Diet': false,
+      'Activity': false,
+      'Stress': false,
+      'Sleep': false,
+    },
+    this.hasEnoughData = false,
+    this.loggedDays = 0,
   });
 }
 
 final healthAnalyticsProvider = Provider<HealthAnalytics>((ref) {
   final wellnessState = ref.watch(wellnessProvider);
-  if (wellnessState.history.isEmpty) return HealthAnalytics();
+  
+  // Minimum 7 days of logged data for meaningful analysis
+  const int minDataDays = 7;
+  final hasEnoughData = wellnessState.history.length >= minDataDays;
+  
+  if (!hasEnoughData) {
+    return HealthAnalytics(loggedDays: wellnessState.history.length);
+  }
 
   final history = wellnessState.history.reversed.toList(); // Oldest first
   
@@ -72,21 +95,52 @@ final healthAnalyticsProvider = Provider<HealthAnalytics>((ref) {
     }
   }
 
-  // Wellness Matrix Calculations
-  double avgDiet = history.map((e) => e.dietScore).fold(0, (a, b) => a + b) / history.length;
-  double avgStress = history.map((e) => e.stressLevel).fold(0, (a, b) => a + b) / history.length;
-  double avgSleepQ = history.map((e) => e.sleepQuality).fold(0, (a, b) => a + b) / history.length;
-  double avgSteps = history.map((e) => e.steps).fold(0, (a, b) => a + b) / history.length;
-  double avgWorkout = history.map((e) => e.workoutMinutes).fold(0.0, (a, b) => a + b) / history.length;
-  double avgSymptomRaw = (crampsTrend.fold(0, (a, b) => a + b) / history.length) + (moodTrend.fold(0, (a, b) => a + b) / history.length);
+  // Track which categories have actual logged data (non-default values)
+  // A category has data if at least one log has a non-zero/non-default value for that field
+  bool hasDietData = history.any((e) => e.dietScore > 0);
+  bool hasStressData = history.any((e) => e.stressLevel > 0);
+  bool hasSleepData = history.any((e) => e.sleepQuality > 0);
+  bool hasActivityData = history.any((e) => (e.steps ?? 0) > 0 || (e.workoutMinutes ?? 0) > 0);
+  bool hasSymptomData = history.any((e) => e.crampsLevel > 0 || e.moodSwingLevel > 0 || e.bloating || e.acne || e.hairThinning || e.facialHair);
+  bool hasCycleData = history.any((e) => (e.flowIntensity?.isNotEmpty ?? false));
+
+  // Wellness Matrix Calculations - only calculate for categories with data
+  double avgDiet = hasDietData 
+      ? history.where((e) => e.dietScore > 0).map((e) => e.dietScore).fold(0.0, (a, b) => a + b) / history.where((e) => e.dietScore > 0).length
+      : 0;
+  double avgStress = hasStressData
+      ? history.where((e) => e.stressLevel > 0).map((e) => e.stressLevel.toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => e.stressLevel > 0).length
+      : 0;
+  double avgSleepQ = hasSleepData
+      ? history.where((e) => e.sleepQuality > 0).map((e) => e.sleepQuality.toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => e.sleepQuality > 0).length
+      : 0;
+  double avgSteps = hasActivityData
+      ? history.where((e) => (e.steps ?? 0) > 0).map((e) => (e.steps ?? 0).toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => (e.steps ?? 0) > 0).length
+      : 0;
+  double avgWorkout = hasActivityData
+      ? history.where((e) => (e.workoutMinutes ?? 0) > 0).map((e) => (e.workoutMinutes ?? 0).toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => (e.workoutMinutes ?? 0) > 0).length
+      : 0;
+  double avgSymptomRaw = hasSymptomData
+      ? (crampsTrend.where((e) => e > 0).fold(0.0, (a, b) => a + b) / crampsTrend.where((e) => e > 0).length) + 
+        (moodTrend.where((e) => e > 0).fold(0.0, (a, b) => a + b) / moodTrend.where((e) => e > 0).length)
+      : 0;
 
   final wellnessMatrix = {
-    'Cycle': 0.85, // Placeholder for regularity
-    'Symptoms': (1.0 - (avgSymptomRaw / 20.0)).clamp(0.1, 1.0),
-    'Diet': (avgDiet / 10.0).clamp(0.1, 1.0),
-    'Activity': (((avgSteps / 8000) + (avgWorkout / 30)) / 2).clamp(0.1, 1.0),
-    'Stress': (1.0 - (avgStress / 10.0)).clamp(0.1, 1.0),
-    'Sleep': (avgSleepQ / 10.0).clamp(0.1, 1.0),
+    'Cycle': hasCycleData ? 0.85 : 0.0, // Placeholder for regularity - only show if cycle data exists
+    'Symptoms': hasSymptomData ? (1.0 - (avgSymptomRaw / 20.0)).clamp(0.1, 1.0) : 0.0,
+    'Diet': hasDietData ? (avgDiet / 10.0).clamp(0.1, 1.0) : 0.0,
+    'Activity': hasActivityData ? (((avgSteps / 8000) + (avgWorkout / 30)) / 2).clamp(0.1, 1.0) : 0.0,
+    'Stress': hasStressData ? (1.0 - (avgStress / 10.0)).clamp(0.1, 1.0) : 0.0,
+    'Sleep': hasSleepData ? (avgSleepQ / 10.0).clamp(0.1, 1.0) : 0.0,
+  };
+
+  final hasData = {
+    'Cycle': hasCycleData,
+    'Symptoms': hasSymptomData,
+    'Diet': hasDietData,
+    'Activity': hasActivityData,
+    'Stress': hasStressData,
+    'Sleep': hasSleepData,
   };
 
   return HealthAnalytics(
@@ -97,5 +151,8 @@ final healthAnalyticsProvider = Provider<HealthAnalytics>((ref) {
     topSymptom: topSymptom,
     insight: insight,
     wellnessMatrix: wellnessMatrix,
+    hasData: hasData,
+    hasEnoughData: true,
+    loggedDays: wellnessState.history.length,
   );
 });
