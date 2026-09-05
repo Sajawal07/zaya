@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'wellness_provider.dart';
-import '../models/wellness.dart';
 
 class HealthAnalytics {
   final List<double> weightTrend;

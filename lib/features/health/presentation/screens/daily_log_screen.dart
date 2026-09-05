@@ -157,8 +157,10 @@ class _DailyLogScreenState extends ConsumerState<DailyLogScreen> {
   }
 
   void _startDeviceSensor() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
     _stepSubscription?.cancel();
-    DeviceStepService.startListening();
+    DeviceStepService.startListening(uid);
     _stepSubscription = DeviceStepService.stepStream.listen((steps) {
       if (mounted && steps > 0) {
         ref.read(wellnessProvider.notifier).logWellness(steps: steps);

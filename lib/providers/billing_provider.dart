@@ -18,6 +18,10 @@ class BillingState {
   final bool isAvailable;
   final List<ProductDetails> products;
   final bool isPurchasing;
+  final bool isLoadingProducts;
+  /// True when Play Billing works but the IAP product is not listed yet
+  /// (app not published / product not created / wrong product ID).
+  final bool isSetupPending;
   final String? errorMessage;
   final bool isPro;
 
@@ -25,6 +29,8 @@ class BillingState {
     this.isAvailable = false,
     this.products = const [],
     this.isPurchasing = false,
+    this.isLoadingProducts = false,
+    this.isSetupPending = false,
     this.errorMessage,
     this.isPro = false,
   });
@@ -33,14 +39,19 @@ class BillingState {
     bool? isAvailable,
     List<ProductDetails>? products,
     bool? isPurchasing,
+    bool? isLoadingProducts,
+    bool? isSetupPending,
     String? errorMessage,
+    bool clearError = false,
     bool? isPro,
   }) {
     return BillingState(
       isAvailable: isAvailable ?? this.isAvailable,
       products: products ?? this.products,
       isPurchasing: isPurchasing ?? this.isPurchasing,
-      errorMessage: errorMessage,
+      isLoadingProducts: isLoadingProducts ?? this.isLoadingProducts,
+      isSetupPending: isSetupPending ?? this.isSetupPending,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       isPro: isPro ?? this.isPro,
     );
   }
@@ -72,6 +83,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
     }, onError: (error) {
       debugPrint("Purchase Stream Error: $error");
       state = state.copyWith(
+        isLoadingProducts: false,
         errorMessage: 'Unable to load pricing. Please check your connection and try again.',
       );
     });
@@ -86,16 +98,23 @@ class BillingNotifier extends StateNotifier<BillingState> {
   }
 
   Future<void> loadProducts() async {
+    state = state.copyWith(
+      isLoadingProducts: true,
+      isSetupPending: false,
+      clearError: true,
+    );
+
     final available = await _iap.isAvailable();
     if (!available) {
       state = state.copyWith(
         isAvailable: false,
-        errorMessage: 'Unable to load pricing. Please check your connection and try again.',
+        isLoadingProducts: false,
+        isSetupPending: false,
+        errorMessage:
+            'Google Play Billing is unavailable on this device. Premium purchase will work after the app is on Play Store with a signed release build.',
       );
       return;
     }
-
-    state = state.copyWith(isAvailable: true, errorMessage: null);
 
     try {
       final ProductDetailsResponse response =
@@ -103,16 +122,44 @@ class BillingNotifier extends StateNotifier<BillingState> {
       if (response.error != null) {
         debugPrint("Query product details error: ${response.error!.message}");
         state = state.copyWith(
+          isAvailable: true,
+          isLoadingProducts: false,
+          isSetupPending: false,
           errorMessage: 'Unable to load pricing. Please check your connection and try again.',
         );
         return;
       }
 
       final products = response.productDetails;
-      state = state.copyWith(products: products, errorMessage: null);
+      if (products.isEmpty) {
+        // Billing library works, but product isn't in Play Console yet /
+        // app not published / testers not added — not an infinite load.
+        debugPrint(
+          'IAP query returned 0 products. notFoundIDs=${response.notFoundIDs}',
+        );
+        state = state.copyWith(
+          isAvailable: true,
+          products: const [],
+          isLoadingProducts: false,
+          isSetupPending: true,
+          clearError: true,
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        isAvailable: true,
+        products: products,
+        isLoadingProducts: false,
+        isSetupPending: false,
+        clearError: true,
+      );
     } catch (e) {
       debugPrint("Load products exception: $e");
       state = state.copyWith(
+        isAvailable: true,
+        isLoadingProducts: false,
+        isSetupPending: false,
         errorMessage: 'Unable to load pricing. Please check your connection and try again.',
       );
     }
@@ -120,9 +167,9 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   /// Initiates a one-time non-consumable purchase flow for [product].
   Future<void> buyProduct(ProductDetails product) async {
-    state = state.copyWith(isPurchasing: true, errorMessage: null);
+    state = state.copyWith(isPurchasing: true, clearError: true);
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    
+
     try {
       final success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
       if (!success) {
@@ -142,9 +189,14 @@ class BillingNotifier extends StateNotifier<BillingState> {
 
   /// Restores previous non-consumable Google Play purchases.
   Future<void> restorePurchases() async {
-    state = state.copyWith(isPurchasing: true, errorMessage: null);
+    state = state.copyWith(isPurchasing: true, clearError: true);
     try {
       await _iap.restorePurchases();
+      // If Play returns nothing, don't leave the button spinning forever.
+      await Future<void>.delayed(const Duration(seconds: 5));
+      if (state.isPurchasing) {
+        state = state.copyWith(isPurchasing: false);
+      }
     } catch (e) {
       debugPrint("Restore purchases exception: $e");
       state = state.copyWith(
@@ -157,23 +209,23 @@ class BillingNotifier extends StateNotifier<BillingState> {
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) async {
     for (var purchaseDetails in purchaseDetailsList) {
       if (purchaseDetails.status == PurchaseStatus.pending) {
-        state = state.copyWith(isPurchasing: true, errorMessage: null);
+        state = state.copyWith(isPurchasing: true, clearError: true);
       } else if (purchaseDetails.status == PurchaseStatus.canceled) {
-        state = state.copyWith(isPurchasing: false, errorMessage: null);
+        state = state.copyWith(isPurchasing: false, clearError: true);
       } else if (purchaseDetails.status == PurchaseStatus.error) {
         final rawMsg = purchaseDetails.error?.message.toLowerCase() ?? '';
         final isCancel = rawMsg.contains('cancel') || rawMsg.contains('user_canceled');
         state = state.copyWith(
           isPurchasing: false,
           errorMessage: isCancel ? null : 'Purchase could not be completed. Please try again.',
+          clearError: isCancel,
         );
       } else if (purchaseDetails.status == PurchaseStatus.purchased ||
-                 purchaseDetails.status == PurchaseStatus.restored) {
-        // Strict Server-side Cloud Function verification calling Google Play Developer API
+          purchaseDetails.status == PurchaseStatus.restored) {
         bool isValid = await _verifyPurchase(purchaseDetails);
         if (isValid) {
           await _refreshPremiumState();
-          state = state.copyWith(isPurchasing: false, isPro: true, errorMessage: null);
+          state = state.copyWith(isPurchasing: false, isPro: true, clearError: true);
         } else {
           state = state.copyWith(
             isPurchasing: false,
@@ -182,7 +234,6 @@ class BillingNotifier extends StateNotifier<BillingState> {
         }
       }
 
-      // Complete purchase (acknowledgement) after verification and entitlement logic
       if (purchaseDetails.pendingCompletePurchase) {
         try {
           await _iap.completePurchase(purchaseDetails);
@@ -193,9 +244,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
     }
   }
 
-  /// Strictly verifies the Google Play purchase token via Firebase Cloud Function (Server-Side).
-  /// Google Play Developer API checks genuineness of token and Admin SDK sets isPremium = true in Firestore.
-  /// NO CLIENT-SIDE FALLBACK IS PERMITTED!
+  /// Strictly verifies the Google Play purchase token via Firebase Cloud Function.
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
     final verificationData = purchaseDetails.verificationData;
     final token = verificationData.serverVerificationData.isNotEmpty
@@ -208,7 +257,8 @@ class BillingNotifier extends StateNotifier<BillingState> {
     }
 
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('verifyGooglePlayPurchase');
+      final callable =
+          FirebaseFunctions.instance.httpsCallable('verifyGooglePlayPurchase');
       final response = await callable.call({
         'productId': purchaseDetails.productID,
         'purchaseToken': token,
@@ -217,7 +267,7 @@ class BillingNotifier extends StateNotifier<BillingState> {
       return response.data is Map && response.data['success'] == true;
     } catch (e) {
       debugPrint("Server-side Google Play verification failed: $e");
-      return false; // STRICT NO-FALLBACK SECURITY: Failed server check = false
+      return false;
     }
   }
 
@@ -226,7 +276,6 @@ class BillingNotifier extends StateNotifier<BillingState> {
     if (user == null) return;
 
     try {
-      // Invalidate local user metrics state to fetch server-updated isPremium flag from Firestore
       ref.invalidate(userMetricsProvider);
     } catch (e) {
       debugPrint("Error invalidating userMetricsProvider: $e");

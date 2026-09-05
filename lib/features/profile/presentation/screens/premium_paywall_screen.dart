@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/app_colors.dart';
+import '../../../../core/premium_limits.dart';
 import '../../../../providers/premium_provider.dart';
 import '../../../../providers/billing_provider.dart';
 import '../../../../shared/widgets/app_loader.dart';
@@ -140,23 +141,17 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Get deep cycle analytics, clinical hormone meal scoring, and daily health pregnancy insights.',
+                'Free includes cycle tracking, daily wellness log, and 10 AI questions/day. Premium unlocks food logging, full Insights, and advanced Health tools.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15, color: AppColors.textSecondary, height: 1.4),
               ),
               const SizedBox(height: 32),
 
-              // Premium Feature List
-              const _FeatureRow('Personalized Hormone AI Coach'),
-              const _FeatureRow('Full Cycle Regularity Trends'),
-              const _FeatureRow('Advanced PCOS Nutrition Matrix'),
-              const _FeatureRow('Pregnancy Daily Development Metrics'),
-              const _FeatureRow('No Advertisements, Zero Tracking'),
-              const _FeatureRow('Lifetime Access — Pay Once, Own Forever'),
-              
+              // Premium Feature List (from FreemiumCatalog)
+              ...FreemiumCatalog.premiumFeatures.map((f) => _FeatureRow(f)),
+
               const SizedBox(height: 36),
 
-              // User-Friendly Error Card if pricing cannot be loaded
               if (billingState.errorMessage != null) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -167,18 +162,20 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'Unable to load pricing. Please check your connection and try again.',
+                      Text(
+                        billingState.errorMessage!,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: () => ref.read(billingProvider.notifier).loadProducts(),
+                        onPressed: () =>
+                            ref.read(billingProvider.notifier).loadProducts(),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.nudeRose),
                         ),
-                        child: const Text('Retry Connection', style: TextStyle(color: AppColors.nudeRose)),
+                        child: const Text('Retry',
+                            style: TextStyle(color: AppColors.nudeRose)),
                       ),
                     ],
                   ),
@@ -186,16 +183,92 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
                 const SizedBox(height: 24),
               ],
 
-              // Loading State while fetching from Play Store
-              if (billingState.products.isEmpty && billingState.isAvailable && billingState.errorMessage == null) ...[
+              // Brief load only — never infinite
+              if (billingState.isLoadingProducts) ...[
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24.0),
                   child: AppLoaderCentered(),
                 ),
+                const Text(
+                  'Checking Google Play…',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Product not on Play Console yet (common before publish)
+              if (!billingState.isLoadingProducts &&
+                  billingState.isSetupPending) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.pregnancyGold.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.pregnancyGold.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.hourglass_top_rounded,
+                          color: AppColors.pregnancyGold, size: 36),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Premium purchase is in progress',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Google Play in-app purchase is being set up. After you publish the app and add the Premium product in Play Console, the buy button and price will appear here automatically.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            ref.read(billingProvider.notifier).loadProducts(),
+                        icon: const Icon(Icons.refresh_rounded,
+                            color: AppColors.nudeRose),
+                        label: const Text('Check again',
+                            style: TextStyle(color: AppColors.nudeRose)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.nudeRose),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mistySage,
+                    disabledBackgroundColor:
+                        AppColors.mistySage.withValues(alpha: 0.45),
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Upgrade — available after Play Store setup',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ],
 
               // Product Details Card & One-Time Purchase Button
-              if (product != null) ...[
+              if (!billingState.isLoadingProducts && product != null) ...[
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -214,7 +287,8 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
                           color: AppColors.nudeRose.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.star_rounded, color: AppColors.nudeRose, size: 28),
+                        child: const Icon(Icons.star_rounded,
+                            color: AppColors.nudeRose, size: 28),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -240,7 +314,6 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
                           ],
                         ),
                       ),
-                      // Live Localized Price from Google Play Store
                       Text(
                         product.price,
                         style: GoogleFonts.montserrat(
@@ -255,7 +328,6 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
 
                 const SizedBox(height: 24),
 
-                // Pay Button
                 ElevatedButton(
                   onPressed: billingState.isPurchasing
                       ? null
@@ -266,14 +338,16 @@ class _PremiumPaywallScreenState extends ConsumerState<PremiumPaywallScreen> {
                     backgroundColor: AppColors.nudeRose,
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30)),
                     elevation: 0,
                   ),
                   child: billingState.isPurchasing
                       ? const AppLoader(size: 22, color: Colors.white)
                       : Text(
                           'Upgrade Now — ${product.price}',
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.bold),
                         ),
                 ),
               ],

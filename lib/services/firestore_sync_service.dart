@@ -1,32 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/cycle_log.dart';
 import '../models/user_metrics.dart';
 import 'notification_service.dart';
-import 'database_service.dart';
 
 class FirestoreSyncService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> syncCycleData({
     required DateTime lastPeriodDate,
+    required String uid,
     int cycleLength = 28,
   }) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
     try {
       final fcmToken = await NotificationService.getFCMToken();
       
-      await _firestore.collection('users').doc(user.uid).set({
+      await _firestore.collection('users').doc(uid).set({
         'lastPeriodDate': Timestamp.fromDate(lastPeriodDate),
         'cycleLength': cycleLength,
         'fcmToken': fcmToken,
         'updatedAt': FieldValue.serverTimestamp(),
-        'email': user.email,
-        'name': user.displayName,
       }, SetOptions(merge: true));
 
       debugPrint('Cycle data synced to Firestore successfully');
@@ -35,13 +28,10 @@ class FirestoreSyncService {
     }
   }
 
-  Future<void> syncAllCycleLogs(List<CycleLog> logs) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
+  Future<void> syncAllCycleLogs(List<CycleLog> logs, String uid) async {
     try {
       final batch = _firestore.batch();
-      final logsRef = _firestore.collection('users').doc(user.uid).collection('cycleLogs');
+      final logsRef = _firestore.collection('users').doc(uid).collection('cycleLogs');
 
       // Delete existing logs first
       final existing = await logsRef.get();
@@ -89,7 +79,7 @@ class FirestoreSyncService {
           ..date = (data['date'] as Timestamp).toDate()
           ..flow = data['flow']
           ..mood = data['mood']
-          ..symptoms = (data['symptoms'] as List<dynamic>?)?.cast<String>()
+          ..symptoms = (data['symptoms'] as List<dynamic>).cast<String>()
           ..energy = data['energy']
           ..isPeriodStart = data['isPeriodStart'] ?? false
           ..isPeriodEnd = data['isPeriodEnd'] ?? false
@@ -105,12 +95,9 @@ class FirestoreSyncService {
     }
   }
 
-  Future<void> syncUserMetrics(UserMetrics metrics) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
+  Future<void> syncUserMetrics(UserMetrics metrics, String uid) async {
     try {
-      await _firestore.collection('users').doc(user.uid).set({
+      await _firestore.collection('users').doc(uid).set({
         'lastPeriodDate': metrics.lastPeriodDate != null
             ? Timestamp.fromDate(metrics.lastPeriodDate!)
             : null,
@@ -153,14 +140,11 @@ class FirestoreSyncService {
     }
   }
 
-  Future<void> updateFCMToken() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
+  Future<void> updateFCMToken(String uid) async {
     try {
       final fcmToken = await NotificationService.getFCMToken();
       if (fcmToken != null) {
-        await _firestore.collection('users').doc(user.uid).update({
+        await _firestore.collection('users').doc(uid).update({
           'fcmToken': fcmToken,
           'updatedAt': FieldValue.serverTimestamp(),
         });

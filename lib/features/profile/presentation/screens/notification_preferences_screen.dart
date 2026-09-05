@@ -16,9 +16,6 @@ class NotifPrefsNotifier extends StateNotifier<Map<String, bool>> {
     'notif_fertile_window',
     'notif_ovulation_day',
     'notif_pregnancy_weekly',
-    'notif_log_reminder',
-    'notif_ai_insights',
-    'notif_hydration',
   ];
 
   NotifPrefsNotifier() : super({}) {
@@ -73,27 +70,6 @@ class NotificationPreferencesScreen extends ConsumerWidget {
       color: AppColors.pregnancyGold,
       title: 'Weekly Pregnancy Update',
       subtitle: 'Baby development highlights each week',
-    ),
-    _NotifItem(
-      key: 'notif_log_reminder',
-      icon: Icons.edit_note_rounded,
-      color: AppColors.nudeRose,
-      title: 'Daily Log Reminder',
-      subtitle: 'Remind me to log symptoms each day',
-    ),
-    _NotifItem(
-      key: 'notif_ai_insights',
-      icon: Icons.auto_awesome_rounded,
-      color: Color(0xFF9C59D1),
-      title: 'AI Insights',
-      subtitle: 'Receive personalized hormonal tips',
-    ),
-    _NotifItem(
-      key: 'notif_hydration',
-      icon: Icons.local_drink_outlined,
-      color: Color(0xFF29B6F6),
-      title: 'Hydration Reminders',
-      subtitle: 'Gentle nudges to stay hydrated',
     ),
   ];
 

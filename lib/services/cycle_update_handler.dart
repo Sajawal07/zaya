@@ -31,10 +31,13 @@ class CycleUpdateHandler {
       await db.saveUserMetrics(metrics);
 
       try {
-        await ref.read(firestoreSyncServiceProvider).syncCycleData(lastPeriodDate: periodDate);
+        await ref.read(firestoreSyncServiceProvider).syncCycleData(
+              lastPeriodDate: periodDate,
+              uid: uid,
+            );
         final allLogs = await db.getAllLogs(uid);
-        await ref.read(firestoreSyncServiceProvider).syncAllCycleLogs(allLogs);
-        await ref.read(firestoreSyncServiceProvider).syncUserMetrics(metrics);
+        await ref.read(firestoreSyncServiceProvider).syncAllCycleLogs(allLogs, uid);
+        await ref.read(firestoreSyncServiceProvider).syncUserMetrics(metrics, uid);
       } catch (e) {
         debugPrint('Cycle data sync warning: $e');
       }

@@ -82,12 +82,11 @@ class _HealthMetricsSetupScreenState extends ConsumerState<HealthMetricsSetupScr
         ref.invalidate(userMetricsProvider);
       }
 
-      if (mounted) {
-        if (widget.onComplete != null) {
-          widget.onComplete!();
-        } else {
-          Navigator.pop(context);
-        }
+      // When shown inside HealthGateWrapper (tab body), do NOT pop —
+      // popping would remove MainLayout and leave a black screen.
+      // Provider update rebuilds the gate to show the real tab content.
+      if (mounted && widget.onComplete != null) {
+        widget.onComplete!();
       }
     } catch (e) {
       if (mounted) {

@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../providers/health_analytics_provider.dart';
 import 'package:hercycle_bloom/shared/widgets/empty_state.dart';
 import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
+import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -47,9 +48,11 @@ class _CycleInsights extends ConsumerWidget {
         // Compute cycle lengths from history dates
         // history is sorted latest first (since periodLogs are usually newest first)
         for (int i = 0; i < historyPaths.length - 1; i++) {
-          final curr = historyPaths[i]['date'] as DateTime;
-          final prev = historyPaths[i + 1]['date'] as DateTime;
-          lengths.add(curr.difference(prev).inDays.toDouble());
+          final curr = historyPaths[i]['date'];
+          final prev = historyPaths[i + 1]['date'];
+          if (curr is DateTime && prev is DateTime) {
+            lengths.add(curr.difference(prev).inDays.toDouble().abs());
+          }
         }
         
         final avgLength = lengths.isEmpty
@@ -175,13 +178,12 @@ class _CycleInsights extends ConsumerWidget {
                           children: [
                             Expanded(child: _StatCard(label: 'Avg Cycle', value: '${avgLength.round()} days', icon: Icons.loop_rounded, color: AppColors.nudeRose)),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: _PremiumFeatureLock(
-                                isPremium: isPremium,
+                            if (isPremium) ...[  
+                              Expanded(
                                 child: _StatCard(label: 'Regularity', value: regularity, icon: Icons.show_chart_rounded, color: AppColors.fertileGreen),
                               ),
-                            ),
-                            const SizedBox(width: 12),
+                              const SizedBox(width: 12),
+                            ],
                             Expanded(child: _StatCard(label: 'History logs', value: '${historyPaths.length}', icon: Icons.history_rounded, color: AppColors.mistySage)),
                           ],
                         ),
@@ -190,39 +192,41 @@ class _CycleInsights extends ConsumerWidget {
                   ),
                 ),
 
-                // ── Nutrition Score Trend ─────────────────────────────────────
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: const _SectionTitle('Hormone Nutrition Score'),
+                // ── Nutrition Score Trend (Premium only) ──────────────────────
+                if (isPremium) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: const _SectionTitle('Hormone Nutrition Score'),
+                    ),
                   ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _PremiumFeatureLock(
-                      isPremium: isPremium,
-                      featureName: 'Nutrition Scoring',
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                    sliver: SliverToBoxAdapter(
                       child: _NutritionTrendChart(nutrition: nutritionState),
                     ),
                   ),
-                ),
 
-                // ── Cycle Regularity Bar ──────────────────────────────────────
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-                  sliver: SliverToBoxAdapter(child: const _SectionTitle('Cycle Length History')),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                  sliver: SliverToBoxAdapter(
-                    child: _PremiumFeatureLock(
-                      isPremium: isPremium,
-                      featureName: 'Cycle History',
+                  // ── Cycle Regularity Bar (Premium only) ──────────────────────
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    sliver: SliverToBoxAdapter(child: const _SectionTitle('Cycle Length History')),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                    sliver: SliverToBoxAdapter(
                       child: _CycleLengthChart(cycles: lengths),
                     ),
                   ),
-                ),
+                ] else ...[
+                  // Premium upgrade teaser for free users
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: _PremiumUpgradeTeaser(),
+                    ),
+                  ),
+                ],
 
                 // ── Health Patterns ───────────────────────────────────────────
                 SliverPadding(
@@ -732,69 +736,75 @@ class _TrimesterLabel extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PREMIUM LOCK UI
+// PREMIUM UPGRADE TEASER (shown to free users instead of locked content)
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _PremiumFeatureLock extends StatelessWidget {
-  final Widget child;
-  final bool isPremium;
-  final String? featureName;
-
-  const _PremiumFeatureLock({
-    required this.child,
-    required this.isPremium,
-    this.featureName,
-  });
-
+class _PremiumUpgradeTeaser extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    if (isPremium) return child;
-
-    return Stack(
-      children: [
-        // The blurred child
-        Opacity(
-          opacity: 0.4,
-          child: AbsorbPointer(child: child),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.nudeRose.withValues(alpha: 0.08),
+            AppColors.pregnancyGold.withValues(alpha: 0.10),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        
-        // Lock Overlay
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.pregnancyGold.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.lock_rounded, color: AppColors.pregnancyGold, size: 20),
-                  ),
-                  if (featureName != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'PREMIUM',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.pregnancyGold.withValues(alpha: 0.8),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.pregnancyGold.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.pregnancyGold.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.workspace_premium_rounded, color: AppColors.pregnancyGold, size: 22),
               ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Unlock Advanced Insights',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Upgrade to Premium to unlock:\n• Cycle Regularity Score\n• Hormone Nutrition Score chart\n• Full Cycle Length History\n• 50 AI questions / day\n• Hormonal analysis & lab reports',
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.6),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.nudeRose,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              child: const Text('Upgrade to Premium', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -845,7 +855,9 @@ class _WeightTrendChart extends ConsumerWidget {
     final analytics = ref.watch(healthAnalyticsProvider);
     final trend = analytics.weightTrend;
 
-    if (trend.isEmpty || trend.every((e) => e == 0)) {
+    final validWeights = trend.where((e) => e > 0).toList();
+
+    if (validWeights.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -862,8 +874,8 @@ class _WeightTrendChart extends ConsumerWidget {
       );
     }
 
-    final maxWeight = trend.reduce((a, b) => a > b ? a : b);
-    final minWeight = trend.where((e) => e > 0).reduce((a, b) => a < b ? a : b);
+    final maxWeight = validWeights.reduce((a, b) => a > b ? a : b);
+    final minWeight = validWeights.reduce((a, b) => a < b ? a : b);
     final range = maxWeight - minWeight;
 
     return Container(

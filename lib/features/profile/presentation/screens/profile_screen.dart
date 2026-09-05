@@ -7,11 +7,13 @@ import 'package:hercycle_bloom/features/auth/presentation/screens/login_screen.d
 import 'package:hercycle_bloom/providers/auth_provider.dart';
 import 'package:hercycle_bloom/providers/metrics_provider.dart';
 import 'package:hercycle_bloom/providers/cycle_provider.dart';
+import 'package:hercycle_bloom/providers/health_analytics_provider.dart';
 import 'package:hercycle_bloom/providers/pregnancy_provider.dart';
 import 'package:hercycle_bloom/providers/premium_provider.dart';
 import 'package:hercycle_bloom/providers/billing_provider.dart';
 import 'package:hercycle_bloom/providers/database_provider.dart';
 import 'package:hercycle_bloom/providers/user_settings_provider.dart';
+import 'package:hercycle_bloom/providers/wellness_provider.dart';
 import 'package:hercycle_bloom/features/health/presentation/screens/pcos_analysis_screen.dart';
 import 'package:hercycle_bloom/models/user_metrics.dart';
 import 'package:intl/intl.dart';
@@ -693,6 +695,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     final authService = ref.read(authServiceProvider);
                     try {
                       await authService.signOut();
+                      
+                      // Invalidate all user-specific providers to clear in-memory state
+                      ref.invalidate(userMetricsProvider);
+                      ref.invalidate(wellnessProvider);
+                      ref.invalidate(cycleDataProvider);
+                      ref.invalidate(healthAnalyticsProvider);
+                      ref.invalidate(billingProvider);
+                      ref.invalidate(databaseServiceProvider);
+                      ref.invalidate(isPremiumProvider);
+                      ref.invalidate(pregnancyModeProvider);
+                      ref.invalidate(billingProvider);
+                      
                       if (!context.mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginScreen()),

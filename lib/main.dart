@@ -11,6 +11,7 @@ import 'features/auth/presentation/screens/onboarding_screen.dart';
 import 'features/home/presentation/screens/main_layout.dart';
 import 'services/notification_service.dart';
 import 'shared/widgets/splash_screen.dart';
+import 'services/device_step_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -51,12 +52,16 @@ class _HerCycleBloomAppState extends State<HerCycleBloomApp> {
     }
   }
 
-  Future<void> _initializeApp() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await NotificationService.initialize();
-  }
+Future<void> _initializeApp() async {
+     await Firebase.initializeApp(
+       options: DefaultFirebaseOptions.currentPlatform,
+     );
+     await NotificationService.initialize();
+     final user = FirebaseAuth.instance.currentUser;
+     if (user != null) {
+       await DeviceStepService.init(user.uid);
+     }
+   }
 
   @override
   Widget build(BuildContext context) {
@@ -83,11 +88,16 @@ class _AuthGate extends StatelessWidget {
         }
         if (snapshot.hasData && snapshot.data != null) {
           final uid = snapshot.data!.uid;
+          // Persist active user UID
           SharedPreferences.getInstance().then((prefs) {
             prefs.setString('active_user_uid', uid);
           });
+          // Initialize step service for this user
+          DeviceStepService.init(uid);
           return const MainLayout();
         }
+        // User logged out — clear step service state
+        DeviceStepService.stopListening();
         return const OnboardingScreen();
       },
     );

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../core/app_config.dart';
 
@@ -6,84 +7,104 @@ import '../core/app_config.dart';
 enum AiContextMode { cycle, pregnancy }
 
 class AIService {
-  late GenerativeModel _model;
-
-  AIService() {
-    _model = GenerativeModel(
-      model: 'gemini-2.5-flash',
-      apiKey: AppConfig.geminiApiKey,
-    );
-  }
-
-  // ── System prompts ────────────────────────────────────────────────────────
+  /// Ordered fallbacks — Google retires model IDs; keep a working default first.
+  static const _modelCandidates = <String>[
+    'gemini-flash-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-latest',
+  ];
 
   static const String _cycleSystemPrompt = '''
-You are HerCycle Bloom AI, a compassionate and knowledgeable women's health AI coach.
+You are HerCycle Bloom AI — a warm, helpful women's health companion.
 
-Your current context: The user is in CYCLE / PCOS / FERTILITY mode.
+Context: the user is in Cycle / general wellness mode (not pregnancy mode).
 
-Your role:
-- Help with menstrual cycle understanding, phase-specific advice, and fertility window guidance.
-- Provide evidence-based PCOS management tips (diet, lifestyle, supplements).
-- Offer hormone-support nutrition guidance.
-- Explain cycle symptoms and what they may indicate.
-- Be warm, non-judgmental, and science-informed.
-
-Strict rules:
-- NEVER give advice about pregnancy nutrition, trimester symptoms, or fetal development.
-- If the user asks pregnancy questions, gently note you can help more when Pregnancy Mode is active.
-- Always add a disclaimer that your guidance is informational, not a substitute for medical advice.
-- Keep responses concise but thorough. Use markdown for clarity.
+CRITICAL response rules:
+1. Answer ONLY what the user asked. Stay strictly on their topic.
+2. Never mention PCOS unless the user explicitly asked about PCOS.
+3. For greetings / thanks / bye: reply in 1–2 friendly sentences only. No tips, no topic pitching.
+4. Unrelated questions: answer briefly and kindly, or say you mainly help with women's wellness.
+5. Be concise and specific. Prefer direct answers over generic wellness essays.
+6. Add a short medical disclaimer only when giving health advice — never for greetings/chitchat.
+7. Never invent personal medical diagnoses.
 ''';
 
   static const String _pregnancySystemPrompt = '''
-You are HerCycle Bloom AI, a compassionate and knowledgeable women's health AI coach.
+You are HerCycle Bloom AI — a warm, reassuring pregnancy companion.
 
-Your current context: The user is in PREGNANCY mode.
+Context: the user is in Pregnancy mode.
 
-Your role:
-- Help with week-by-week pregnancy guidance, body changes, and symptom support.
-- Provide trimester-specific nutrition advice.
-- Explain fetal development milestones.
-- Offer guidance on safe exercise, sleep positions, and common discomforts.
-- Help prepare for prenatal appointments and what to expect.
-
-Strict rules:
-- NEVER give cycle tracking, PCOS, or ovulation/fertility advice in this mode.
-- If the user asks cycle-related questions, gently note those features are in Cycle Mode.
-- Always add a disclaimer that your guidance is informational, not a substitute for medical advice.
-- Be warm, reassuring, and evidence-based. Use markdown for clarity.
+CRITICAL response rules:
+1. Answer ONLY what the user asked. Stay strictly on their topic.
+2. Never bring up PCOS unless they ask.
+3. For greetings / thanks / bye: reply in 1–2 friendly sentences only. No tips, no topic pitching.
+4. Focus on pregnancy-safe guidance when the question is health-related.
+5. Be concise and specific. Prefer direct answers over generic essays.
+6. Add a short medical disclaimer only when giving health advice — never for greetings/chitchat.
+7. Never invent personal medical diagnoses.
 ''';
 
-  // ── Core methods ──────────────────────────────────────────────────────────
-
-  /// [mode] injects the correct system prompt so the AI never gives
-  /// cross-mode advice (e.g. fertility tips to a pregnant user).
   Future<String> getResponse(
     String prompt, {
     List<Content>? history,
     AiContextMode mode = AiContextMode.cycle,
     int? pregnancyWeek,
   }) async {
-    if (AppConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY') {
-      return "HerCycle Bloom AI is almost ready! Please add your Gemini API key in `lib/core/app_config.dart` to start chatting.";
+    final key = AppConfig.geminiApiKey;
+    if (key.isEmpty || key == 'YOUR_GEMINI_API_KEY') {
+      return 'AI_NOT_CONFIGURED';
     }
 
-    try {
-      final systemPrompt = _buildSystemPrompt(mode, pregnancyWeek: pregnancyWeek);
+    final systemPrompt = _buildSystemPrompt(mode, pregnancyWeek: pregnancyWeek);
+    final sanitized = _sanitizeHistory(history);
+    Object? lastError;
 
-      // Prepend system prompt as the first model turn (Gemini SDK pattern)
-      final fullHistory = [
-        Content.model([TextPart(systemPrompt)]),
-        ...?history,
-      ];
-
-      final chat = _model.startChat(history: fullHistory);
-      final response = await chat.sendMessage(Content.text(prompt));
-      return response.text ?? "I'm sorry, I couldn't process that.";
-    } catch (e) {
-      return _handleError(e);
+    for (final modelName in _modelCandidates) {
+      try {
+        final model = GenerativeModel(
+          model: modelName,
+          apiKey: key,
+          systemInstruction: Content.system(systemPrompt),
+        );
+        final chat = model.startChat(history: sanitized);
+        final response = await chat.sendMessage(Content.text(prompt));
+        final text = response.text?.trim();
+        if (text == null || text.isEmpty) {
+          return "I couldn't generate a response right now. Please try rephrasing your question.";
+        }
+        return text;
+      } catch (e) {
+        lastError = e;
+        debugPrint('Gemini model "$modelName" failed: $e');
+        final msg = e.toString().toLowerCase();
+        final tryNext = msg.contains('not found') ||
+            msg.contains('404') ||
+            msg.contains('unsupported') ||
+            msg.contains('is not found');
+        if (!tryNext) break;
+      }
     }
+
+    // Retry once with no history if history caused the failure
+    if (sanitized.isNotEmpty && lastError != null) {
+      try {
+        final model = GenerativeModel(
+          model: _modelCandidates.first,
+          apiKey: key,
+          systemInstruction: Content.system(systemPrompt),
+        );
+        final chat = model.startChat();
+        final response = await chat.sendMessage(Content.text(prompt));
+        final text = response.text?.trim();
+        if (text != null && text.isNotEmpty) return text;
+      } catch (e) {
+        lastError = e;
+        debugPrint('Gemini no-history retry failed: $e');
+      }
+    }
+
+    return _handleError(lastError ?? 'unknown');
   }
 
   Future<String> analyzeImage(
@@ -91,27 +112,39 @@ Strict rules:
     String prompt, {
     AiContextMode mode = AiContextMode.cycle,
   }) async {
-    if (AppConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY') {
-      return "HerCycle Bloom AI is almost ready!";
+    if (AppConfig.geminiApiKey.isEmpty ||
+        AppConfig.geminiApiKey == 'YOUR_GEMINI_API_KEY') {
+      return 'AI_NOT_CONFIGURED';
     }
 
-    try {
-      final systemPrompt = _buildSystemPrompt(mode);
-      final content = [
-        Content.multi([
-          TextPart('$systemPrompt\n\n$prompt'),
-          DataPart('image/jpeg', imageBytes),
-        ])
-      ];
+    final systemPrompt = _buildSystemPrompt(mode);
+    Object? lastError;
 
-      final response = await _model.generateContent(content);
-      return response.text ?? "Unable to analyze image.";
-    } catch (e) {
-      return _handleError(e);
+    for (final modelName in _modelCandidates) {
+      try {
+        final model = GenerativeModel(
+          model: modelName,
+          apiKey: AppConfig.geminiApiKey,
+          systemInstruction: Content.system(systemPrompt),
+        );
+        final content = [
+          Content.multi([
+            TextPart(prompt),
+            DataPart('image/jpeg', imageBytes),
+          ])
+        ];
+        final response = await model.generateContent(content);
+        return response.text ?? 'Unable to analyze image.';
+      } catch (e) {
+        lastError = e;
+        debugPrint('Gemini image model "$modelName" failed: $e');
+        final msg = e.toString().toLowerCase();
+        if (!(msg.contains('not found') || msg.contains('404'))) break;
+      }
     }
+
+    return _handleError(lastError ?? 'unknown');
   }
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   String _buildSystemPrompt(AiContextMode mode, {int? pregnancyWeek}) {
     if (mode == AiContextMode.pregnancy) {
@@ -123,25 +156,58 @@ Strict rules:
     return _cycleSystemPrompt;
   }
 
+  List<Content> _sanitizeHistory(List<Content>? history) {
+    if (history == null || history.isEmpty) return const [];
+
+    final cleaned = <Content>[];
+    for (final item in history) {
+      final role = item.role;
+      if (role != 'user' && role != 'model') continue;
+      if (cleaned.isNotEmpty && cleaned.last.role == role) {
+        cleaned.removeLast();
+      }
+      cleaned.add(item);
+    }
+
+    while (cleaned.isNotEmpty && cleaned.first.role != 'user') {
+      cleaned.removeAt(0);
+    }
+
+    if (cleaned.length > 10) {
+      return cleaned.sublist(cleaned.length - 10);
+    }
+    return cleaned;
+  }
+
   String _handleError(dynamic e) {
     final errorStr = e.toString().toLowerCase();
+    debugPrint('AIService final error: $e');
 
     if (errorStr.contains('socketexception') ||
         errorStr.contains('host lookup') ||
-        errorStr.contains('failed to connect')) {
-      return "Unable to connect. Please check your internet connection and try again.";
+        errorStr.contains('failed to connect') ||
+        errorStr.contains('network')) {
+      return 'Unable to connect. Please check your internet connection and try again.';
     }
 
     if (errorStr.contains('quota') ||
         errorStr.contains('429') ||
-        errorStr.contains('rate limit')) {
-      return "HerCycle Bloom is currently handling a lot of requests. Please try again in a few minutes.";
+        errorStr.contains('rate limit') ||
+        errorStr.contains('resource_exhausted')) {
+      return 'HerCycle Bloom is currently handling a lot of requests. Please try again in a few minutes.';
     }
 
-    if (errorStr.contains('invalid api key')) {
-      return "There is an issue with the AI configuration. Please contact support.";
+    if (errorStr.contains('invalid api key') ||
+        errorStr.contains('api key not valid') ||
+        errorStr.contains('api_key_invalid') ||
+        errorStr.contains('permission_denied')) {
+      return 'There is an issue with the AI configuration. Please contact support.';
     }
 
-    return "I'm sorry, I'm having trouble processing that right now. Please try again in a moment.";
+    if (errorStr.contains('not found') || errorStr.contains('404')) {
+      return 'The AI model is temporarily unavailable. Please try again shortly.';
+    }
+
+    return "I'm having trouble reaching the AI coach right now. Please try again in a moment.";
   }
 }

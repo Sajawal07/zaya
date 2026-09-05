@@ -28,5 +28,12 @@ service cloud.firestore {
     match /purchase_tokens/{tokenId} {
       allow read, write: if false;
     }
+
+    // Problem reports — authenticated users can submit reports (create only).
+    // Readable only via Firebase Admin SDK / Console (no client read access).
+    match /problem_reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
+    }
   }
 }

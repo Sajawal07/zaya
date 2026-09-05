@@ -8,6 +8,7 @@ import 'package:hercycle_bloom/providers/database_provider.dart';
 import 'package:hercycle_bloom/providers/cycle_provider.dart';
 import 'package:hercycle_bloom/providers/metrics_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hercycle_bloom/features/auth/presentation/screens/login_screen.dart';
 import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -465,12 +466,37 @@ class _ReportProblemScreenState extends ConsumerState<ReportProblemScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate request
-    if (mounted) {
-      setState(() {
-        _submitting = false;
-        _submitted = true;
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      await FirebaseFirestore.instance.collection('problem_reports').add({
+        'userId': user?.uid ?? 'anonymous',
+        'userEmail': user?.email ?? 'unknown',
+        'category': _selectedCategory,
+        'subject': _subjectController.text.trim(),
+        'description': _descController.text.trim(),
+        'appVersion': '1.0.0',
+        'platform': 'Android',
+        'submittedAt': FieldValue.serverTimestamp(),
+        'status': 'open',
       });
+
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _submitted = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to submit report. Please try again.\nError: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 

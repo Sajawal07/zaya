@@ -3,7 +3,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hercycle_bloom/firebase_options.dart';
 import 'package:hercycle_bloom/core/app_colors.dart';
 import 'package:hercycle_bloom/core/cycle_math.dart';
@@ -107,8 +106,8 @@ class NotificationService {
       final body = received.body;
       if (title == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? prefs.getString('active_user_uid');
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
 
       final db = DatabaseService(uid);
       await db.saveNotification(

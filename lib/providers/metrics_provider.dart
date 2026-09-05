@@ -42,8 +42,8 @@ class UserMetricsNotifier extends StateNotifier<AsyncValue<UserMetrics?>> {
     bool hasPremiumAccess = false;
     String subType = 'none';
 
-    // Hardcoded test email always premium
-    if (user.email == 'sarkrar48@gmail.com') {
+    // Hardcoded test emails always premium
+    if (const ['sarkrar48@gmail.com', 'hercyclebloom.test@gmail.com'].contains(user.email?.toLowerCase())) {
       hasPremiumAccess = true;
       subType = 'tester_bypass';
     } else {

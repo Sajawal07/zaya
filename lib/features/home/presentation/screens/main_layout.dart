@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hercycle_bloom/providers/sync_provider.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../core/app_mode.dart';
@@ -31,7 +32,12 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(firestoreSyncServiceProvider).updateFCMToken());
+    Future.microtask(() {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        ref.read(firestoreSyncServiceProvider).updateFCMToken(uid);
+      }
+    });
   }
 
   // ── Screen lists (same index structure for both modes) ───────────────────

@@ -51,3 +51,7 @@ functions/node_modules/
 key.properties
 android/app/keystore/
 build_release.bat
+
+# Local Flutter dart-defines (API keys)
+dart_defines.json
+

@@ -1,22 +1,83 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pedometer/pedometer.dart';
 
 enum StepSource { none, deviceSensor, healthConnect }
 
-class DeviceStepService {
-  static StreamSubscription<StepCount>? _subscription;
-  static int _todaySteps = 0;
+class _StepState {
+  int baselineSteps = 0;
+  int todaySteps = 0;
+  String baselineDate = '';
+}
 
-  /// Stream of step count updates from the device sensor.
+class DeviceStepService {
+  static final Map<String, _StepState> _stepStates = {};
+  static final Map<String, StreamSubscription<StepCount>?> _subscriptions = {};
+
+  static Future<void> init(String uid) async {
+    final state = _stepStates[uid] ?? _StepState();
+    final prefs = await SharedPreferences.getInstance();
+    final today = _todayDateString();
+    final savedDate = prefs.getString(_kStepBaselineDate(uid)) ?? '';
+
+    if (savedDate == today) {
+      state.baselineSteps = prefs.getInt(_kStepBaseline(uid)) ?? 0;
+      state.baselineDate = today;
+    } else {
+      state.baselineSteps = 0;
+      state.baselineDate = today;
+    }
+    _stepStates[uid] = state;
+  }
+
   static Stream<int> get stepStream {
-    return Pedometer.stepCountStream.map((event) {
-      _todaySteps = event.steps;
-      return _todaySteps;
+    return Pedometer.stepCountStream.asyncMap((event) async {
+      await _handleRawSteps(event.steps);
+      return currentSteps;
     });
   }
 
-  /// Check if the step counter sensor is available on this device.
+  static Future<void> _handleRawSteps(int rawSteps) async {
+    final uid = _currentUid;
+    if (uid == null) return;
+    final state = _stepStates[uid] ?? _StepState();
+    final today = _todayDateString();
+
+    if (state.baselineDate != today) {
+      state.baselineDate = today;
+      state.baselineSteps = rawSteps;
+      state.todaySteps = 0;
+      await _saveBaseline(uid, rawSteps, today);
+    } else if (state.baselineSteps == 0 && rawSteps > 0) {
+      final prefs = await SharedPreferences.getInstance();
+      final savedBaseline = prefs.getInt(_kStepBaseline(uid)) ?? 0;
+      if (savedBaseline == 0) {
+        state.baselineSteps = rawSteps;
+        await _saveBaseline(uid, rawSteps, today);
+      } else {
+        state.baselineSteps = savedBaseline;
+      }
+      state.todaySteps = (rawSteps - state.baselineSteps).clamp(0, 999999);
+    } else {
+      state.todaySteps = (rawSteps - state.baselineSteps).clamp(0, 999999);
+    }
+    _stepStates[uid] = state;
+  }
+
+  static Future<void> _saveBaseline(String uid, int baseline, String date) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kStepBaseline(uid), baseline);
+    await prefs.setString(_kStepBaselineDate(uid), date);
+  }
+
+  static String _todayDateString() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  static String? _currentUid;
+
   static Future<bool> isSensorAvailable() async {
     try {
       final stream = Pedometer.stepCountStream;
@@ -31,7 +92,6 @@ class DeviceStepService {
         },
       );
 
-      // Timeout after 2 seconds — if no event, sensor likely unavailable
       Future.delayed(const Duration(seconds: 2), () {
         if (!completer.isCompleted) {
           completer.complete(false);
@@ -45,35 +105,51 @@ class DeviceStepService {
     }
   }
 
-  /// Request ACTIVITY_RECOGNITION permission (Android 10+).
   static Future<bool> requestPermission() async {
     final status = await Permission.activityRecognition.request();
     return status.isGranted;
   }
 
-  /// Check if permission is already granted.
   static Future<bool> hasPermission() async {
     final status = await Permission.activityRecognition.status;
     return status.isGranted;
   }
 
-  /// Start listening to the step counter sensor.
-  static void startListening() {
-    _subscription?.cancel();
-    _subscription = Pedometer.stepCountStream.listen(
-      (event) {
-        _todaySteps = event.steps;
+  static void startListening(String uid) {
+    _currentUid = uid;
+    stopListening();
+    _subscriptions[uid] = Pedometer.stepCountStream.listen(
+      (event) async {
+        await _handleRawSteps(event.steps);
       },
       onError: (_) {},
     );
   }
 
-  /// Stop listening to the step counter sensor.
   static void stopListening() {
-    _subscription?.cancel();
-    _subscription = null;
+    for (final sub in _subscriptions.values) {
+      sub?.cancel();
+    }
+    _subscriptions.clear();
+    _currentUid = null;
   }
 
-  /// Get the current step count.
-  static int get currentSteps => _todaySteps;
+  static Future<void> reset(String uid) async {
+    _stepStates.remove(uid);
+    _subscriptions[uid]?.cancel();
+    _subscriptions.remove(uid);
+    _currentUid = null;
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove(_kStepBaseline(uid));
+    prefs.remove(_kStepBaselineDate(uid));
+  }
+
+  static int get currentSteps {
+    final uid = _currentUid;
+    if (uid == null) return 0;
+    return _stepStates[uid]?.todaySteps ?? 0;
+  }
+
+  static String _kStepBaseline(String uid) => 'step_baseline_count_$uid';
+  static String _kStepBaselineDate(String uid) => 'step_baseline_date_$uid';
 }

@@ -330,8 +330,9 @@ class HomeScreen extends ConsumerWidget {
 
                   // Notification Sync & Local Batch Scheduling
                   await ref.read(firestoreSyncServiceProvider).syncCycleData(
-                    lastPeriodDate: date,
-                  );
+                        lastPeriodDate: date,
+                        uid: user.uid,
+                      );
                   await NotificationService.scheduleCycleSequence(date);
 
                   ref.invalidate(cycleDataProvider);

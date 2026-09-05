@@ -48,28 +48,25 @@ class _NourishScreenState extends ConsumerState<NourishScreen> {
                   _buildMacroSection(nutrition, calorieGoalNote),
                   _buildDailyScoreCard(nutrition),
 
-                  // ── Hormone-Support Score Trend ───────────────────────
-                  const SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
-                      child: Text(
-                        'Hormone-Support Nutrition Score',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  // ── Hormone-Support Score Trend (Premium only) ────────
+                  if (isPremium) ...[
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
+                        child: Text(
+                          'Hormone-Support Nutrition Score',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _PremiumFeatureLock(
-                      isPremium: isPremium,
-                      featureName: 'Nutrition Trend',
-                      child: _buildWeeklyTrendSection(),
-                    ),
-                  ),
+                    SliverToBoxAdapter(child: _buildWeeklyTrendSection()),
+                  ],
 
                   _buildActionButtons(context),
 
-                  // ── AI Coach Recommendations ──────────────────────────
-                  if (nutrition.summary?.recommendations.isNotEmpty ?? false) ...[
+                  // ── AI Coach Recommendations (Premium only) ───────────
+                  if (isPremium &&
+                      (nutrition.summary?.recommendations.isNotEmpty ?? false)) ...[
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -80,10 +77,8 @@ class _NourishScreenState extends ConsumerState<NourishScreen> {
                       ),
                     ),
                     SliverToBoxAdapter(
-                      child: _PremiumFeatureLock(
-                        isPremium: isPremium,
-                        featureName: 'AI Recommendations',
-                        child: _buildRecommendationsSection(nutrition.summary!.recommendations),
+                      child: _buildRecommendationsSection(
+                        nutrition.summary!.recommendations,
                       ),
                     ),
                   ],
@@ -569,22 +564,20 @@ class _NourishScreenState extends ConsumerState<NourishScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Radar Chart
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.oldLace.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: _PremiumFeatureLock(
-                    isPremium: isPremium,
-                    featureName: 'Hormone Matrix',
+              // Radar Chart (Premium only — free users don't see locked UI)
+              if (isPremium) ...[
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.oldLace.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     child: MealRadarChart(score: score, size: 180),
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
+              ],
 
               const Text('Evidence-Based Breakdown',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -1058,58 +1051,6 @@ class _ActionButton extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PREMIUM LOCK UI
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _PremiumFeatureLock extends StatelessWidget {
-  final Widget child;
-  final bool isPremium;
-  final String? featureName;
-
-  const _PremiumFeatureLock({
-    required this.child,
-    required this.isPremium,
-    this.featureName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isPremium) return child;
-
-    return Stack(
-      children: [
-        Opacity(
-          opacity: 0.3,
-          child: AbsorbPointer(child: child),
-        ),
-        Positioned.fill(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_rounded, color: AppColors.pregnancyGold, size: 24),
-                if (featureName != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'PREMIUM',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.pregnancyGold.withValues(alpha: 0.8),
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

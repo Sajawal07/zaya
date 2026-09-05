@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../core/app_mode.dart';
+import '../../../../core/premium_limits.dart';
 import '../../../../providers/ai_provider.dart';
 import '../../../../providers/metrics_provider.dart';
 import '../../../../services/ai_service.dart';
@@ -24,12 +25,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isTyping = false;
 
-  // Greeting is built at runtime so it reflects the active mode
   ChatMessage _buildGreeting(AppMode mode) {
     final text = mode == AppMode.pregnancy
-        ? "Hi! I'm HerCycle Bloom 🌱 Your pregnancy companion is ready. Ask me about your current week, body changes, nutrition, or anything on your mind. I'm here for every step of this journey."
-        : "Hi! I'm HerCycle Bloom 💗 Your cycle & PCOS coach is ready. Ask me about your current phase, PCOS management, hormone-support nutrition, or any symptoms you're experiencing."
-    ;
+        ? "Hi! I'm HerCycle Bloom 🌱 Ask me anything about your pregnancy week, symptoms, nutrition, or just say hello — I'm here for you."
+        : "Hi! I'm HerCycle Bloom 💗 Ask me about your cycle, symptoms, nutrition, or just say hello — I'll answer what you ask.";
     return ChatMessage(content: text, type: MessageType.ai, timestamp: DateTime.now());
   }
 
@@ -50,26 +49,44 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     super.dispose();
   }
 
+  int _countUserMessagesToday(List<ChatMessage> messages) {
+    final now = DateTime.now();
+    return messages
+        .where((m) =>
+            m.type == MessageType.user &&
+            m.timestamp.year == now.year &&
+            m.timestamp.month == now.month &&
+            m.timestamp.day == now.day)
+        .length;
+  }
+
+  String _localGreetingReply(String text) {
+    final lower = text.toLowerCase().trim();
+    if (lower.contains('thank')) {
+      return "You're welcome! Ask me anything whenever you need.";
+    }
+    if (lower.contains('bye') || lower.contains('good night')) {
+      return 'Take care! Talk to you soon.';
+    }
+    if (lower.contains('how are you')) {
+      return "I'm doing great, thank you! How can I help you today?";
+    }
+    return "Hello! 👋 How can I help you today?";
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(chatMessagesProvider);
     final mode = ref.watch(appModeProvider);
-    final metrics = ref.watch(userMetricsProvider).value;
     final isPremium = ref.watch(isPremiumProvider);
-    
-    // Calculate today's message count for Free users
+    final dailyLimit = PremiumLimits.aiDailyLimit(isPremium);
+
     int userMessagesToday = 0;
-    if (!isPremium && messagesAsync.hasValue) {
-      final now = DateTime.now();
-      userMessagesToday = messagesAsync.value!.where((m) => 
-        m.type == MessageType.user && 
-        m.timestamp.year == now.year && 
-        m.timestamp.month == now.month && 
-        m.timestamp.day == now.day
-      ).length;
+    if (messagesAsync.hasValue) {
+      userMessagesToday = _countUserMessagesToday(messagesAsync.value!);
     }
-    const int dailyLimit = 10;
-    final bool isLimitReached = !isPremium && userMessagesToday >= dailyLimit;
+    final bool isLimitReached = userMessagesToday >= dailyLimit;
+    final remaining = (dailyLimit - userMessagesToday).clamp(0, dailyLimit);
 
     return Scaffold(
       backgroundColor: AppColors.oldLace,
@@ -85,10 +102,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               child: const Icon(Icons.auto_awesome_rounded, color: AppColors.nudeRose),
             ),
             const SizedBox(width: 12),
-            Text(
-              'HerCycle Bloom AI',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: 20,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'HerCycle Bloom AI',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontSize: 18,
+                        ),
+                  ),
+                  Text(
+                    isLimitReached
+                        ? 'Daily limit reached'
+                        : '$remaining of $dailyLimit questions left today',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -112,11 +145,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           Expanded(
             child: messagesAsync.when(
               data: (messages) {
-                final displayMessages = messages.isEmpty
-                    ? [_buildGreeting(mode)]
-                    : messages;
-                
-                // Auto-scroll to bottom when data changes
+                final displayMessages =
+                    messages.isEmpty ? [_buildGreeting(mode)] : messages;
                 _scrollToBottom();
 
                 return ListView.builder(
@@ -127,16 +157,16 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     if (index == displayMessages.length) {
                       return _buildTypingIndicator();
                     }
-                    final message = displayMessages[index];
-                    return _buildMessage(message);
+                    return _buildMessage(displayMessages[index]);
                   },
                 );
               },
               loading: () => const AppLoaderCentered(),
-              error: (err, stack) => Center(child: Text('Error loading chat: $err')),
+              error: (err, stack) =>
+                  Center(child: Text('Error loading chat: $err')),
             ),
           ),
-          if (isLimitReached) _buildLimitReachedUI(),
+          if (isLimitReached) _buildLimitReachedUI(isPremium: isPremium),
           _buildInputArea(isLimitReached),
         ],
       ),
@@ -148,11 +178,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear all chats?'),
-        content: const Text('This will permanently delete your entire conversation history with HerCycle Bloom.'),
+        content: const Text(
+            'This will permanently delete your entire conversation history with HerCycle Bloom.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -173,14 +205,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: isUser ? AppColors.nudeRose : AppColors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
-            bottomLeft: isUser ? const Radius.circular(20) : const Radius.circular(4),
-            bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(20),
+            bottomLeft:
+                isUser ? const Radius.circular(20) : const Radius.circular(4),
+            bottomRight:
+                isUser ? const Radius.circular(4) : const Radius.circular(20),
           ),
           boxShadow: [
             if (!isUser)
@@ -195,8 +230,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ? Text(
                 message.content,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.white,
-                ),
+                      color: AppColors.white,
+                    ),
               )
             : MarkdownBody(
                 data: message.content,
@@ -215,9 +250,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
             bottomLeft: Radius.circular(4),
@@ -232,9 +267,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             Text(
               'HerCycle Bloom is thinking...',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-                fontStyle: FontStyle.italic,
-              ),
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
             ),
           ],
         ),
@@ -265,15 +300,20 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 enabled: !_isTyping,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
-                  hintText: 'Ask about your health...',
+                  hintText: 'Ask anything...',
                   hintStyle: const TextStyle(color: AppColors.textSecondary),
-                  border: InputBorder.none,
                   filled: true,
                   fillColor: AppColors.oldLace.withValues(alpha: 0.5),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide(color: AppColors.mistySage.withValues(alpha: 0.2)),
+                    borderSide: BorderSide(
+                        color: AppColors.mistySage.withValues(alpha: 0.2)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
@@ -281,7 +321,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                   disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide(color: AppColors.mistySage.withValues(alpha: 0.1)),
+                    borderSide: BorderSide(
+                        color: AppColors.mistySage.withValues(alpha: 0.1)),
                   ),
                 ),
                 onSubmitted: (_) => _isTyping ? null : _sendMessage(),
@@ -290,12 +331,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             const SizedBox(width: 12),
             FloatingActionButton(
               onPressed: _isTyping ? null : _sendMessage,
-              backgroundColor: _isTyping 
-                  ? AppColors.mistySage 
-                  : AppColors.nudeRose,
+              backgroundColor:
+                  _isTyping ? AppColors.mistySage : AppColors.nudeRose,
               elevation: _isTyping ? 0 : 2,
               mini: true,
-              child: const Icon(Icons.send_rounded, color: AppColors.white, size: 20),
+              child: const Icon(Icons.send_rounded,
+                  color: AppColors.white, size: 20),
             ),
           ],
         ),
@@ -303,9 +344,17 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
   }
 
-  void _sendMessage() async {
+  Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+
+    final isPremium = ref.read(isPremiumProvider);
+    final dailyLimit = PremiumLimits.aiDailyLimit(isPremium);
+    final existing = ref.read(chatMessagesProvider).value ?? [];
+    if (_countUserMessagesToday(existing) >= dailyLimit) {
+      setState(() {});
+      return;
+    }
 
     final userMessage = ChatMessage(
       content: text,
@@ -317,81 +366,124 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       _controller.clear();
       _isTyping = true;
     });
-
     _scrollToBottom();
 
-    // Save user message to Firestore
     await ref.read(chatActionsProvider).sendMessage(userMessage);
 
-    String response;
-    const disclaimer = "\n\n**Disclaimer:** *This is general informational guidance. The answer may not be fully accurate for your specific condition. Please consult a qualified doctor for final advice.*";
+    const disclaimer =
+        '\n\n**Disclaimer:** *This is general informational guidance — not a substitute for medical advice. Please consult a qualified doctor for personal care.*';
 
     final faqService = ref.read(faqServiceProvider);
-    final match = faqService.findMatch(text);
+    await faqService.loadFAQs();
 
-    if (match != null) {
-      if (match['type'] == 'exact') {
-        response = match['answer']! + disclaimer;
-      } else {
-        response = "**Notice:** *An exact answer was not found. Showing a similar response that may relate to your question.*\n\n" + match['answer']! + disclaimer;
-      }
+    String response;
+
+    // 1) Greetings / chitchat → local short reply (never FAQ / Gemini / PCOS)
+    if (faqService.isGreetingOrChitchat(text)) {
+      response = _localGreetingReply(text);
     } else {
-      // Fallback with AI or standard fallback message
-      final aiService = ref.read(aiServiceProvider);
-      final currentMessages = ref.read(chatMessagesProvider).value ?? [];
-      final history = currentMessages.map((m) {
-        return m.type == MessageType.user
-            ? Content.text(m.content)
-            : Content.model([TextPart(m.content)]);
-      }).toList();
-
-    final mode = ref.read(appModeProvider);
-    final metrics = ref.read(userMetricsProvider).value;
-
-    // Compute pregnancy week for richer context
-    int? pregnancyWeek;
-    if (mode == AppMode.pregnancy && metrics?.lastPeriodDate != null) {
-      pregnancyWeek = (DateTime.now().difference(metrics!.lastPeriodDate!).inDays ~/ 7).clamp(1, 40);
-    }
-
-    final aiContextMode = mode == AppMode.pregnancy
-        ? AiContextMode.pregnancy
-        : AiContextMode.cycle;
-
-      final aiResponse = await aiService.getResponse(
-        text,
-        history: history,
-        mode: aiContextMode,
-        pregnancyWeek: pregnancyWeek,
-      );
-      
-      if (aiResponse.toLowerCase().contains("i'm sorry") || aiResponse.toLowerCase().contains("couldn't process")) {
-        response = "Sorry, we could not find a relevant answer at this time. Please consult a doctor for proper guidance." + disclaimer;
+      // 2) Strong local FAQ match only
+      final match = faqService.findMatch(text);
+      if (match != null) {
+        response = match['type'] == 'exact'
+            ? match['answer']! + disclaimer
+            : '**Related answer from our knowledge base:**\n\n${match['answer']!}$disclaimer';
       } else {
-        final lowerAi = aiResponse.toLowerCase();
-        if (lowerAi.contains("disclaimer") || lowerAi.contains("medical advice") || lowerAi.contains("consult a doctor")) {
-          response = aiResponse;
+        // 3) Otherwise Gemini answers the exact question
+        final aiService = ref.read(aiServiceProvider);
+        final currentMessages = ref.read(chatMessagesProvider).value ?? [];
+        final historySource =
+            currentMessages.where((m) => m.content.trim().isNotEmpty).toList();
+        if (historySource.isNotEmpty &&
+            historySource.last.type == MessageType.user &&
+            historySource.last.content.trim() == text) {
+          historySource.removeLast();
+        }
+
+        final history = <Content>[];
+        final recent = historySource.length > 12
+            ? historySource.sublist(historySource.length - 12)
+            : historySource;
+        for (final m in recent) {
+          // Skip greetings and PCOS-heavy FAQ dumps that poison context
+          if (m.type == MessageType.user &&
+              faqService.isGreetingOrChitchat(m.content)) {
+            continue;
+          }
+          final lowerAi = m.content.toLowerCase();
+          final userAskedPcos = text.toLowerCase().contains('pcos');
+          if (m.type == MessageType.ai &&
+              (lowerAi.contains('knowledge base') ||
+                  (lowerAi.contains('pcos') && !userAskedPcos))) {
+            continue;
+          }
+          history.add(
+            m.type == MessageType.user
+                ? Content.text(m.content)
+                : Content.model([TextPart(m.content)]),
+          );
+        }
+
+        // Keep last 8 turns max after filtering
+        final trimmedHistory =
+            history.length > 8 ? history.sublist(history.length - 8) : history;
+
+        final mode = ref.read(appModeProvider);
+        final metrics = ref.read(userMetricsProvider).value;
+        int? pregnancyWeek;
+        if (mode == AppMode.pregnancy && metrics?.lastPeriodDate != null) {
+          pregnancyWeek =
+              (DateTime.now().difference(metrics!.lastPeriodDate!).inDays ~/ 7)
+                  .clamp(1, 40);
+        }
+
+        final aiResponse = await aiService.getResponse(
+          text,
+          history: trimmedHistory,
+          mode: mode == AppMode.pregnancy
+              ? AiContextMode.pregnancy
+              : AiContextMode.cycle,
+          pregnancyWeek: pregnancyWeek,
+        );
+
+        if (aiResponse == 'AI_NOT_CONFIGURED') {
+          response =
+              "Live AI isn't configured in this build. Local answers still work for known FAQ topics — for full Gemini replies, run the app with a Gemini API key (`--dart-define-from-file=dart_defines.json`).";
         } else {
-          response = aiResponse + disclaimer;
+          final lower = aiResponse.toLowerCase();
+          final looksLikeHealthAdvice = lower.contains('symptom') ||
+              lower.contains('doctor') ||
+              lower.contains('treatment') ||
+              lower.contains('cycle') ||
+              lower.contains('period') ||
+              lower.contains('pregnan') ||
+              lower.contains('hormone') ||
+              lower.contains('pcos') ||
+              lower.contains('nutrition') ||
+              lower.contains('supplement') ||
+              aiResponse.length > 220;
+          final alreadyHasDisclaimer = lower.contains('disclaimer') ||
+              lower.contains('medical advice') ||
+              lower.contains('consult a doctor') ||
+              lower.contains('consult a qualified');
+          response = (looksLikeHealthAdvice && !alreadyHasDisclaimer)
+              ? aiResponse + disclaimer
+              : aiResponse;
         }
       }
     }
 
     if (!mounted) return;
 
-    final aiMessage = ChatMessage(
-      content: response,
-      type: MessageType.ai,
-      timestamp: DateTime.now(),
-    );
+    await ref.read(chatActionsProvider).sendMessage(
+          ChatMessage(
+            content: response,
+            type: MessageType.ai,
+            timestamp: DateTime.now(),
+          ),
+        );
 
-    // Save response to Firestore
-    await ref.read(chatActionsProvider).sendMessage(aiMessage);
-
-    setState(() {
-      _isTyping = false;
-    });
-
+    setState(() => _isTyping = false);
     _scrollToBottom();
   }
 
@@ -407,7 +499,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     });
   }
 
-  Widget _buildLimitReachedUI() {
+  Widget _buildLimitReachedUI({required bool isPremium}) {
+    final limit = PremiumLimits.aiDailyLimit(isPremium);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -423,36 +516,46 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.lock_clock_rounded, color: AppColors.pregnancyGold, size: 40),
+          const Icon(Icons.lock_clock_rounded,
+              color: AppColors.pregnancyGold, size: 40),
           const SizedBox(height: 16),
           Text(
             'Daily Limit Reached',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Free users get 10 AI messages per day. Upgrade to Premium for unlimited guidance and deeper hormonal insights.',
+          Text(
+            isPremium
+                ? "You've used all $limit Premium AI questions for today. Come back tomorrow for more."
+                : 'Free users get ${PremiumLimits.freeAiMessagesPerDay} AI questions per day (including hi / hello). Upgrade to Premium for ${PremiumLimits.premiumAiMessagesPerDay} questions/day plus advanced insights.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.nudeRose,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          if (!isPremium) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PremiumPaywallScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.nudeRose,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Upgrade to Premium'),
               ),
-              child: const Text('Unlock Unlimited AI & Insights'),
             ),
-          ),
+          ],
         ],
       ),
     );
