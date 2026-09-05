@@ -79,7 +79,7 @@ class FirestoreSyncService {
           ..date = (data['date'] as Timestamp).toDate()
           ..flow = data['flow']
           ..mood = data['mood']
-          ..symptoms = (data['symptoms'] as List<dynamic>).cast<String>()
+          ..symptoms = (data['symptoms'] as List<dynamic>?)?.cast<String>() ?? []
           ..energy = data['energy']
           ..isPeriodStart = data['isPeriodStart'] ?? false
           ..isPeriodEnd = data['isPeriodEnd'] ?? false

@@ -138,6 +138,19 @@ class DatabaseService {
   // Cycle Log Methods
   Future<void> saveCycleLog(CycleLog log) async {
     final isar = await db;
+    // Check for existing log with same userId and date to avoid unique index violation
+    final startOfDay = DateTime(log.date.year, log.date.month, log.date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final existing = await isar.cycleLogs
+        .filter()
+        .userIdEqualTo(log.userId)
+        .dateBetween(startOfDay, endOfDay, includeUpper: false)
+        .findFirst();
+    
+    if (existing != null) {
+      log.id = existing.id;
+    }
+
     await isar.writeTxn(() async {
       await isar.cycleLogs.put(log);
     });
