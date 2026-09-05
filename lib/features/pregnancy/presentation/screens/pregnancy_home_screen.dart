@@ -370,10 +370,11 @@ class _PregnancyOnboardingState extends ConsumerState<_PregnancyOnboarding> {
 
   void _submit() async {
     if (_selectedLmp == null) return;
-    
+
     setState(() => _isLoading = true);
     try {
       await ref.read(userMetricsProvider.notifier).updatePregnancyMode(true, startDate: _selectedLmp);
+      ref.invalidate(activePregnancyProvider);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

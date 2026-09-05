@@ -12,6 +12,7 @@ import '../../../../providers/health_analytics_provider.dart';
 import 'package:hercycle_bloom/shared/widgets/empty_state.dart';
 import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
+import 'package:hercycle_bloom/features/pregnancy/domain/pregnancy_service.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -277,11 +278,12 @@ class _PregnancyInsights extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final metrics = ref.watch(userMetricsProvider).value;
-    final startDate = metrics?.lastPeriodDate;
-    final now = DateTime.now();
-    final week = startDate != null ? (now.difference(startDate).inDays ~/ 7) : 0;
+    final startDate = metrics?.lastPeriodDate?.toLocal();
+    final progress = startDate != null ? PregnancyService.calculateProgress(lastPeriodDate: startDate) : {'week': 0, 'day': 0};
+    final week = progress['week'] ?? 0;
+    final day = progress['day'] ?? 0;
     final daysLeft = startDate != null
-        ? startDate.add(const Duration(days: 280)).difference(now).inDays
+        ? 280 - (progress['week']! * 7 + progress['day']!)
         : 0;
 
     return Scaffold(
@@ -308,7 +310,7 @@ class _PregnancyInsights extends ConsumerWidget {
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
-                    Expanded(child: _StatCard(label: 'Current Week', value: 'Week $week', icon: Icons.pregnant_woman_rounded, color: AppColors.pregnancyGold)),
+                    Expanded(child: _StatCard(label: 'Current Week', value: 'Week $week, Day $day', icon: Icons.pregnant_woman_rounded, color: AppColors.pregnancyGold)),
                     const SizedBox(width: 12),
                     Expanded(child: _StatCard(label: 'Days to Due', value: '$daysLeft days', icon: Icons.timer_outlined, color: const Color(0xFF4A9373))),
                     const SizedBox(width: 12),

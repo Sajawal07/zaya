@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/notification_service.dart';
 import '../services/database_service.dart';
 import 'auth_provider.dart';
+import 'pregnancy_provider.dart';
 
 class UserMetricsNotifier extends StateNotifier<AsyncValue<UserMetrics?>> {
   final Ref ref;
@@ -33,6 +34,7 @@ class UserMetricsNotifier extends StateNotifier<AsyncValue<UserMetrics?>> {
         await _migrateLegacyPregnancyData(user!.uid, metrics);
       }
       state = AsyncValue.data(metrics);
+      ref.invalidate(activePregnancyProvider);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -130,8 +132,8 @@ class UserMetricsNotifier extends StateNotifier<AsyncValue<UserMetrics?>> {
         
       await db.savePregnancyJourney(active);
       
-      metrics.lastPeriodDate = startDate;
-      metrics.dueDate = startDate.add(const Duration(days: 280));
+      metrics.lastPeriodDate = startDate.toUtc();
+      metrics.dueDate = startDate.add(const Duration(days: 280)).toUtc();
     } else if (!isPregnant) {
       // Mark active journey as inactive
       final active = await db.getActivePregnancy(user!.uid);
@@ -148,6 +150,7 @@ class UserMetricsNotifier extends StateNotifier<AsyncValue<UserMetrics?>> {
 
     await db.saveUserMetrics(metrics);
     state = AsyncValue.data(metrics);
+    ref.invalidate(activePregnancyProvider);
 
     // Re-schedule notifications
     if (isPregnant && startDate != null) {

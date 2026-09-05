@@ -5,6 +5,7 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../core/app_mode.dart';
 import '../../../../core/premium_limits.dart';
+import 'package:hercycle_bloom/features/pregnancy/domain/pregnancy_service.dart';
 import '../../../../providers/ai_provider.dart';
 import '../../../../providers/metrics_provider.dart';
 import '../../../../services/ai_service.dart';
@@ -432,9 +433,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
         final metrics = ref.read(userMetricsProvider).value;
         int? pregnancyWeek;
         if (mode == AppMode.pregnancy && metrics?.lastPeriodDate != null) {
-          pregnancyWeek =
-              (DateTime.now().difference(metrics!.lastPeriodDate!).inDays ~/ 7)
-                  .clamp(1, 40);
+          final startDate = metrics!.lastPeriodDate!.toLocal();
+          final progress = PregnancyService.calculateProgress(lastPeriodDate: startDate);
+          pregnancyWeek = progress['week'];
         }
 
         final aiResponse = await aiService.getResponse(

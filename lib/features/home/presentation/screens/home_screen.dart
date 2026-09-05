@@ -325,7 +325,7 @@ class HomeScreen extends ConsumerWidget {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
                   final metrics = await db.getUserMetrics(user.uid) ?? UserMetrics()..userId = user.uid;
-                  metrics.lastPeriodDate = date;
+                  metrics.lastPeriodDate = date.toUtc();
                   await db.saveUserMetrics(metrics);
 
                   // Notification Sync & Local Batch Scheduling

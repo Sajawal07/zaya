@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/app_colors.dart';
+import '../../../../features/pregnancy/domain/pregnancy_service.dart';
 import '../../../../providers/metrics_provider.dart';
 
 class BabyScreen extends ConsumerWidget {
@@ -9,9 +10,9 @@ class BabyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final metrics = ref.watch(userMetricsProvider).value;
-    final startDate = metrics?.lastPeriodDate;
-    final now = DateTime.now();
-    final week = startDate != null ? (now.difference(startDate).inDays ~/ 7).clamp(1, 40) : 1;
+    final startDate = metrics?.lastPeriodDate?.toLocal();
+    final progress = startDate != null ? PregnancyService.calculateProgress(lastPeriodDate: startDate) : {'week': 0, 'day': 0};
+    final week = progress['week'] ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
