@@ -39,7 +39,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -67,4 +67,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("com.android.billingclient:billing:8.0.0")
+    }
 }

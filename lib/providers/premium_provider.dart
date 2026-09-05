@@ -4,6 +4,7 @@ import 'auth_provider.dart';
 
 const premiumTestEmails = [
   "sarkrar48@gmail.com",
+  "hercyclebloom.test@gmail.com",
 ];
 
 final remotePremiumFlagProvider = StreamProvider<bool>((ref) {

@@ -15,10 +15,10 @@ import 'package:hercycle_bloom/services/notification_service.dart';
 import 'package:hercycle_bloom/services/cycle_update_handler.dart';
 import 'package:hercycle_bloom/core/cycle_math.dart';
 import 'package:hercycle_bloom/providers/sync_provider.dart';
-import 'package:hercycle_bloom/providers/premium_provider.dart';
-import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
 import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 import 'notification_screen.dart';
+import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
+import 'package:hercycle_bloom/providers/premium_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -34,20 +34,19 @@ class HomeScreen extends ConsumerWidget {
       }
     });
     final cycleAsync = ref.watch(cycleDataProvider);
-    final isPremium = ref.watch(isPremiumProvider);
 
     if (isPregnancyMode) {
       return const PregnancyHomeScreen();
     }
 
     return cycleAsync.when(
-      data: (info) => _buildCycleView(context, ref, info, isPremium),
+      data: (info) => _buildCycleView(context, ref, info),
       loading: () => const Scaffold(body: AppLoaderCentered()),
       error: (e, s) => Scaffold(body: Center(child: Text('Error loading cycle: $e'))),
     );
   }
 
-  Widget _buildCycleView(BuildContext context, WidgetRef ref, CycleInfo info, bool isPremium) {
+  Widget _buildCycleView(BuildContext context, WidgetRef ref, CycleInfo info) {
     final int currentDay = info.currentDay;
     const int cycleLength = 28;
     final String phase = info.phase;
@@ -220,13 +219,9 @@ class HomeScreen extends ConsumerWidget {
                     
                     const SizedBox(height: 24),
 
-                    // PCOS Analysis Quick Link
-                    _buildPcosCard(context),
+                    // PCOS Analysis Quick Link (Premium)
+                    _buildPcosCard(context, ref),
 
-                    if (!isPremium) ...[
-                      const SizedBox(height: 24),
-                      _buildHomeAdBanner(context),
-                    ],
                     // Clear the floating AI FAB so bottom content is not obscured
                     const SizedBox(height: 150),
                   ],
@@ -239,13 +234,20 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPcosCard(BuildContext context) {
+  Widget _buildPcosCard(BuildContext context, WidgetRef ref) {
+    final isPremium = ref.watch(isPremiumProvider);
     return Card(
       child: InkWell(
         onTap: () {
-           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const PcosAnalysisScreen()),
-          );
+          if (isPremium) {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PcosAnalysisScreen()),
+            );
+          } else {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(24),
         child: Padding(
@@ -255,14 +257,34 @@ class HomeScreen extends ConsumerWidget {
               const Icon(Icons.waves_rounded, color: AppColors.nudeRose, size: 24),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  'Explore Your Hormonal Profile',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Explore Your Hormonal Profile',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    if (!isPremium)
+                      Text(
+                        'Premium feature',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.pregnancyGold,
+                            ),
+                      ),
+                  ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+              Icon(
+                isPremium
+                    ? Icons.chevron_right_rounded
+                    : Icons.lock_rounded,
+                color: isPremium
+                    ? AppColors.textSecondary
+                    : AppColors.pregnancyGold,
+                size: 20,
+              ),
             ],
           ),
         ),
