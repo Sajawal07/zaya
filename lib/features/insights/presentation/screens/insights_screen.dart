@@ -933,8 +933,9 @@ class _WellnessRadarChart extends ConsumerWidget {
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10)],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Expanded(child: _SectionTitle('Wellness Analysis')),
+            const _SectionTitle('Wellness Analysis'),
             const SizedBox(height: 24),
             Icon(
               Icons.favorite_outline_rounded,
