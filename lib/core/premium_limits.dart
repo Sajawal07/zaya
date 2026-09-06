@@ -26,7 +26,7 @@ class FreemiumCatalog {
     'Food logging with daily macros',
     'Basic health hub (daily log, meds, metrics)',
     'Basic insights (BMI, avg cycle, weight trend)',
-    'AI coach — 10 questions / day',
+    'AI coach — 15 questions / day',
   ];
 
   /// Premium — advanced analytics worth paying for

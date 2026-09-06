@@ -130,7 +130,6 @@ class _HubCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  final bool isPremiumLocked;
 
   const _HubCard({
     required this.title,
@@ -138,7 +137,6 @@ class _HubCard extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
-    this.isPremiumLocked = false,
   });
 
   @override
