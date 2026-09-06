@@ -5,6 +5,7 @@ import '../providers/database_provider.dart';
 import '../providers/cycle_provider.dart';
 import '../providers/sync_provider.dart';
 import '../models/user_metrics.dart';
+import 'account_lifecycle_service.dart';
 import 'notification_service.dart';
 
 /// Centralized handler for cycle data mutations across all screens.
@@ -15,6 +16,9 @@ class CycleUpdateHandler {
     final user = FirebaseAuth.instance.currentUser;
     final uid = customUid ?? user?.uid;
     if (uid == null) return;
+
+    // User is writing real data again — allow future reinstall hydrate.
+    await AccountLifecycleService.setFirestoreHydrateBlocked(uid, false);
 
     final db = ref.read(databaseServiceProvider);
     

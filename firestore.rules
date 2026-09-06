@@ -23,17 +23,22 @@ service cloud.firestore {
       }
     }
 
-    // Purchase tokens tracking collection — locked from all direct client access!
-    // Written solely by Firebase Admin SDK inside verifyGooglePlayPurchase Cloud Function to prevent token replay attacks.
+    // Purchase tokens — clients may NOT create/update (prevents forging entitlements).
+    // Owner may read + delete their own tokens so account deletion works on Spark
+    // (no Cloud Functions / Blaze required).
     match /purchase_tokens/{tokenId} {
-      allow read, write: if false;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create, update: if false;
     }
 
-    // Problem reports — authenticated users can submit reports (create only).
-    // Readable only via Firebase Admin SDK / Console (no client read access).
+    // Problem reports — create for support; owner may read/delete their own
+    // (needed for complete account deletion without Cloud Functions).
     match /problem_reports/{reportId} {
       allow create: if request.auth != null;
-      allow read, update, delete: if false;
+      allow read, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow update: if false;
     }
   }
 }

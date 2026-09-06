@@ -4,14 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../models/cycle_log.dart';
-import '../../../../models/user_metrics.dart';
 import '../../../../providers/database_provider.dart';
 import '../../../../providers/cycle_provider.dart';
-import '../../../../providers/sync_provider.dart';
 import '../../../../services/database_service.dart';
 import '../../../../services/firestore_sync_service.dart';
-import '../../../../services/notification_service.dart';
 import '../../../../services/cycle_update_handler.dart';
+import '../../../../services/account_lifecycle_service.dart';
 import '../../../../core/cycle_math.dart';
 import '../../../../shared/widgets/app_loader.dart';
 
@@ -55,15 +53,32 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     var logs = await db.getAllLogs(user.uid);
 
-    // If local Isar is empty, try loading from Firestore (after reinstall)
+    // If local Isar is empty, try loading from Firestore (after reinstall).
+    // Do not restore after an intentional Start Fresh / data wipe.
     if (logs.isEmpty) {
+      await AccountLifecycleService.ensureEpochLoaded(user.uid);
+      final epochAtStart = AccountLifecycleService.currentDataEpoch(user.uid);
+      final hydrateBlocked =
+          await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid);
+      if (hydrateBlocked) return logs;
+
       try {
         final firestoreService = FirestoreSyncService();
         
         // Try loading cycle logs from Firestore
         final remoteLogs = await firestoreService.loadCycleLogsFromFirestore(user.uid);
+        if (AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) ||
+            await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+          debugPrint('Calendar: skipped hydrate (wipe in progress)');
+          return await db.getAllLogs(user.uid);
+        }
         if (remoteLogs.isNotEmpty) {
           for (final log in remoteLogs) {
+            if (AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) ||
+                await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+              debugPrint('Calendar: aborted mid-hydrate write (wipe)');
+              return await db.getAllLogs(user.uid);
+            }
             await db.saveCycleLog(log);
           }
           logs = await db.getAllLogs(user.uid);
@@ -71,8 +86,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         
         // If still no logs, check if user has lastPeriodDate from metrics
         if (logs.isEmpty) {
+          if (AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) ||
+              await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+            return logs;
+          }
           final remoteMetrics = await firestoreService.loadUserMetricsFromFirestore(user.uid);
-          if (remoteMetrics != null && remoteMetrics.lastPeriodDate != null) {
+          if (remoteMetrics != null &&
+              remoteMetrics.lastPeriodDate != null &&
+              !AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) &&
+              !await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
             // Restore metrics to Isar
             await db.saveUserMetrics(remoteMetrics);
             

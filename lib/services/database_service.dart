@@ -58,10 +58,11 @@ class DatabaseService {
     );
   }
 
-  Future<void> close() async {
+  Future<void> close({bool deleteFromDisk = false}) async {
     if (_isar != null && _isar!.isOpen) {
-      await _isar!.close();
+      await _isar!.close(deleteFromDisk: deleteFromDisk);
     }
+    _isar = null;
   }
 
   // Nutrition Log Methods
@@ -288,7 +289,79 @@ class DatabaseService {
   Future<void> deleteLogsAfter(DateTime date) async {
     final isar = await db;
     await isar.writeTxn(() async {
-      await isar.cycleLogs.filter().dateGreaterThan(date).deleteAll();
+      await isar.cycleLogs
+          .filter()
+          .dateGreaterThan(date, include: true)
+          .deleteAll();
+    });
+  }
+
+  /// Deletes recent user-generated logs on/after [cutoff] (day-normalized).
+  /// Covers cycle, wellness, nutrition, meals, kicks, labs, physical metrics,
+  /// and pregnancy appointments in the window.
+  Future<void> deleteRecentUserLogs(String userId, DateTime cutoff) async {
+    final isar = await db;
+    final day = DateTime(cutoff.year, cutoff.month, cutoff.day);
+    await isar.writeTxn(() async {
+      await isar.cycleLogs
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.wellnessLogs
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.nutritionLogs
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.dailyMealPlans
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.kickLogs
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.labReports
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.physicalMetrics
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+      await isar.pregnancyAppointments
+          .filter()
+          .userIdEqualTo(userId)
+          .dateGreaterThan(day, include: true)
+          .deleteAll();
+
+      // Medications created in the window (no log date — use createdAt).
+      await isar.medications
+          .filter()
+          .userIdEqualTo(userId)
+          .createdAtGreaterThan(day, include: true)
+          .deleteAll();
+
+      // End pregnancy journeys started in the window.
+      final recentJourneys = await isar.pregnancyJourneys
+          .filter()
+          .userIdEqualTo(userId)
+          .startDateGreaterThan(day, include: true)
+          .findAll();
+      for (final j in recentJourneys) {
+        j.isActive = false;
+        j.endDate = DateTime.now().toUtc();
+        await isar.pregnancyJourneys.put(j);
+      }
     });
   }
 
@@ -374,7 +447,29 @@ class DatabaseService {
       await isar.pregnancyAppointments.clear();
       await isar.pregnancyJourneys.clear();
       await isar.appNotifications.clear();
+      await isar.nutritionLogs.clear();
+      await isar.dailyMealPlans.clear();
+      await isar.wellnessLogs.clear();
+      await isar.labReports.clear();
+      await isar.medications.clear();
+      await isar.physicalMetrics.clear();
     });
+  }
+
+  /// Closes Isar and deletes the on-disk database for this UID.
+  Future<void> purgeLocalDatabaseFiles() async {
+    if (_isar != null && _isar!.isOpen) {
+      await close(deleteFromDisk: true);
+      return;
+    }
+    // Instance may already be closed — remove directory if present.
+    _isar = null;
+    if (uid == null) return;
+    final dir = await getApplicationDocumentsDirectory();
+    final path = Directory('${dir.path}/isar_$uid');
+    if (await path.exists()) {
+      await path.delete(recursive: true);
+    }
   }
 
   // Notification Methods

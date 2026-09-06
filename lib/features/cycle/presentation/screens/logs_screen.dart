@@ -4,11 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/app_colors.dart';
 import '../../../../models/cycle_log.dart';
-import '../../../../models/user_metrics.dart';
+
 import '../../../../providers/database_provider.dart';
-import '../../../../providers/cycle_provider.dart';
-import '../../../../providers/sync_provider.dart';
-import '../../../../services/notification_service.dart';
+
 import '../../../../services/cycle_update_handler.dart';
 import '../../../../shared/widgets/app_loader.dart';
 

@@ -91,9 +91,7 @@ class NutritionNotifier extends StateNotifier<NutritionState> {
       final logs = await db.getNutritionLogsForDate(user.uid, today);
       var plan = await db.getMealPlanForDate(user.uid, today);
 
-      if (plan == null) {
-        plan = await _generatePlan(user.uid, today);
-      }
+      plan ??= await _generatePlan(user.uid, today);
 
       // Fetch weekly scores for the hormone-support chart
       final weeklyScores = await _fetchWeeklyScores(user.uid, today);

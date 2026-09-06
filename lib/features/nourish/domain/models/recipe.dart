@@ -50,5 +50,5 @@ class Recipe {
   }
 
   String get macros => 'P: ${protein}g • C: ${carbs}g • F: ${fats}g';
-  String get timeStr => '${prepTimeMinutes} min';
+  String get timeStr => '$prepTimeMinutes min';
 }

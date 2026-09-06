@@ -173,14 +173,18 @@ class MealScoringEngine {
 
   static String _generateHormonalInsight(
       double score, double insulin, double inflammation, double proc) {
-    if (score > 8.5)
+    if (score > 8.5) {
       return "Hormone Harmony. This meal actively supports your endocrine system.";
-    if (insulin > 7)
+    }
+    if (insulin > 7) {
       return "High Insulin Load — consider adding more protein or fiber next time.";
-    if (inflammation > 6)
+    }
+    if (inflammation > 6) {
       return "Elevated Inflammation — swap for whole, minimally-processed ingredients.";
-    if (proc > 0.7)
+    }
+    if (proc > 0.7) {
       return "Ultra-processed ingredients detected — these can disrupt endocrine signals.";
+    }
     return "Balanced choice. Supports steady energy and hormonal homeostasis.";
   }
 }

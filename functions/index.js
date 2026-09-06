@@ -114,6 +114,95 @@ exports.verifyGooglePlayPurchase = functions.https.onCall(async (data, context) 
 });
 
 /**
+ * Permanently deletes the caller's account data:
+ * - users/{uid} and known subcollections (cycleLogs, chats, private)
+ * - purchase_tokens owned by this uid
+ * - Firebase Auth user
+ *
+ * Requires the client to have recently re-authenticated for UX confirmation;
+ * Admin Auth delete does not need requires-recent-login on the client.
+ */
+exports.deleteUserAccount = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Must be signed in to delete an account.'
+    );
+  }
+
+  const uid = context.auth.uid;
+  const db = admin.firestore();
+
+  async function deleteCollection(path) {
+    const ref = db.collection(path);
+    const pageSize = 200;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const snap = await ref.limit(pageSize).get();
+      if (snap.empty) break;
+      const batch = db.batch();
+      snap.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+      if (snap.size < pageSize) break;
+    }
+  }
+
+  // 1. Subcollections under users/{uid}
+  await deleteCollection(`users/${uid}/cycleLogs`);
+  await deleteCollection(`users/${uid}/chats`);
+  await deleteCollection(`users/${uid}/private`);
+
+  // 2. User profile document (includes premium entitlement fields)
+  const userRef = db.collection('users').doc(uid);
+  const userSnap = await userRef.get();
+  if (userSnap.exists) {
+    await userRef.delete();
+  }
+
+  // 3. Purchase tokens owned by this uid (Admin-only collection)
+  const tokensSnap = await db
+    .collection('purchase_tokens')
+    .where('userId', '==', uid)
+    .get();
+  if (!tokensSnap.empty) {
+    const batch = db.batch();
+    tokensSnap.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
+
+  // 4. Support problem reports filed by this user (best-effort)
+  try {
+    const reportsSnap = await db
+      .collection('problem_reports')
+      .where('userId', '==', uid)
+      .get();
+    if (!reportsSnap.empty) {
+      const batch = db.batch();
+      reportsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    }
+  } catch (err) {
+    console.warn(`problem_reports cleanup warning for ${uid}:`, err);
+  }
+
+  // 5. Firebase Auth user
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (err) {
+    if (err && err.code !== 'auth/user-not-found') {
+      console.error(`Failed to delete Auth user ${uid}:`, err);
+      throw new functions.https.HttpsError(
+        'internal',
+        'Failed to delete authentication account.'
+      );
+    }
+  }
+
+  console.log(`Successfully deleted account for user ${uid}`);
+  return { success: true };
+});
+
+/**
  * Daily scheduled task to check all users' cycles.
  * Sends notifications for Ovulation (Day 12), Missed Logging (Day 29),
  * and Late Periods (Day 36+).

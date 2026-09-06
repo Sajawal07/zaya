@@ -103,13 +103,12 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
   Widget build(BuildContext context) {
     final String guidance = _getGuidanceMessage();
     
-    return Container(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            // Circular Tracker
-            Center(
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          // Circular Tracker
+          Center(
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -236,9 +235,8 @@ class _CycleTrackerWidgetState extends State<CycleTrackerWidget> with SingleTick
                 ),
               ),
             ],
-            const SizedBox(height: 40),
-          ],
-        ),
+          const SizedBox(height: 40),
+        ],
       ),
     );
   }

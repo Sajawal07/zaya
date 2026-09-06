@@ -1,4 +1,4 @@
-import 'dart:math' as Math;
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/app_colors.dart';
@@ -263,7 +263,9 @@ class _CycleInsights extends ConsumerWidget {
 
   double _sqrt(double x) {
     double guess = x / 2;
-    for (int i = 0; i < 20; i++) guess = (guess + x / guess) / 2;
+    for (int i = 0; i < 20; i++) {
+      guess = (guess + x / guess) / 2;
+    }
     return guess;
   }
 }
@@ -1075,9 +1077,13 @@ class _WellnessRadarPainter extends CustomPainter {
       final r = radius * (i / 4);
       final path = Path();
       for (int j = 0; j < axes.length; j++) {
-        final x = center.dx + r * Math.cos(j * angleStep - 3.14159 / 2);
-        final y = center.dy + r * Math.sin(j * angleStep - 3.14159 / 2);
-        if (j == 0) path.moveTo(x, y); else path.lineTo(x, y);
+        final x = center.dx + r * math.cos(j * angleStep - 3.14159 / 2);
+        final y = center.dy + r * math.sin(j * angleStep - 3.14159 / 2);
+        if (j == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
       path.close();
       canvas.drawPath(path, webPaint);
@@ -1089,8 +1095,8 @@ class _WellnessRadarPainter extends CustomPainter {
       final val = (matrix[label] ?? 0.0).clamp(0.0, 1.0);
       final hasCategoryData = hasData?[label] ?? false;
       final r = radius * (hasCategoryData ? val : 0.0);
-      final x = center.dx + r * Math.cos(i * angleStep - 3.14159 / 2);
-      final y = center.dy + r * Math.sin(i * angleStep - 3.14159 / 2);
+      final x = center.dx + r * math.cos(i * angleStep - 3.14159 / 2);
+      final y = center.dy + r * math.sin(i * angleStep - 3.14159 / 2);
       points.add(Offset(x, y));
     }
 
@@ -1127,7 +1133,6 @@ class _WellnessRadarPainter extends CustomPainter {
       final r = radius * (hasCategoryData ? val : 0.0);
       
       final startAngle = i * segmentAngle - 3.14159 / 2 - (segmentAngle * 0.4);
-      final endAngle = (i + 1) * segmentAngle - 3.14159 / 2 - (segmentAngle * 0.6);
 
       // Draw the Petal (Wedge) - only if has data, otherwise draw gray placeholder
       if (hasCategoryData) {
@@ -1167,8 +1172,8 @@ class _WellnessRadarPainter extends CustomPainter {
       // Draw category label
       final labelAngle = i * segmentAngle - 3.14159 / 2;
       final labelRadius = radius + 24;
-      final labelX = center.dx + labelRadius * Math.cos(labelAngle);
-      final labelY = center.dy + labelRadius * Math.sin(labelAngle);
+      final labelX = center.dx + labelRadius * math.cos(labelAngle);
+      final labelY = center.dy + labelRadius * math.sin(labelAngle);
       
       final textColor = hasCategoryData ? color : AppColors.textSecondary.withValues(alpha: 0.4);
       final textPainter = TextPainter(

@@ -59,6 +59,7 @@ class FirestoreSyncService {
       debugPrint('Synced ${logs.length} cycle logs to Firestore');
     } catch (e) {
       debugPrint('Error syncing cycle logs: $e');
+      rethrow;
     }
   }
 
@@ -152,6 +153,124 @@ class FirestoreSyncService {
       }
     } catch (e) {
       debugPrint('Error updating FCM token: $e');
+    }
+  }
+
+  /// Clears only cycle-tracking dates (Reset Recent when no period starts remain).
+  /// Does **not** clear height/weight/age or premium fields.
+  Future<void> clearCycleTrackingFields(String uid) async {
+    await _firestore.collection('users').doc(uid).set({
+      'lastPeriodDate': FieldValue.delete(),
+      'cycleLength': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Clears cycle + body metric fields on the user doc (Start Fresh).
+  /// Never touches premium entitlements.
+  Future<void> clearCycleFields(String uid, {required bool preservePremium}) async {
+    // Intentionally do not touch isPremium / subscriptionType / purchaseToken / verifiedAt.
+    assert(preservePremium, 'clearCycleFields must preserve premium');
+    await _firestore.collection('users').doc(uid).set({
+      'lastPeriodDate': FieldValue.delete(),
+      'cycleLength': FieldValue.delete(),
+      'isPregnant': false,
+      'dueDate': FieldValue.delete(),
+      'height': FieldValue.delete(),
+      'weight': FieldValue.delete(),
+      'age': FieldValue.delete(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _deleteQueryInBatches(Query query) async {
+    const pageSize = 200;
+    while (true) {
+      final snap = await query.limit(pageSize).get();
+      if (snap.docs.isEmpty) break;
+      final batch = _firestore.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      if (snap.docs.length < pageSize) break;
+    }
+  }
+
+  Future<void> deleteSubcollection(String uid, String subcollection) async {
+    final ref =
+        _firestore.collection('users').doc(uid).collection(subcollection);
+    await _deleteQueryInBatches(ref);
+  }
+
+  /// Start Fresh: remove user-generated cloud data, keep premium fields.
+  Future<void> clearAllUserGeneratedData(
+    String uid, {
+    required bool preservePremium,
+  }) async {
+    await deleteSubcollection(uid, 'cycleLogs');
+    await deleteSubcollection(uid, 'chats');
+    await deleteSubcollection(uid, 'private');
+    await clearCycleFields(uid, preservePremium: preservePremium);
+    debugPrint(
+      'Cleared user-generated Firestore data for $uid (premium preserved)',
+    );
+  }
+
+  /// Delete Account: remove entire users/{uid} tree (including premium fields).
+  Future<void> deleteEntireUserTree(String uid) async {
+    await deleteSubcollection(uid, 'cycleLogs');
+    await deleteSubcollection(uid, 'chats');
+    await deleteSubcollection(uid, 'private');
+    final doc = _firestore.collection('users').doc(uid);
+    final snap = await doc.get();
+    if (snap.exists) {
+      await doc.delete();
+    }
+    debugPrint('Deleted entire Firestore user tree for $uid');
+  }
+
+  /// Deletes purchase_tokens owned by [uid] (Spark-compatible; no Admin SDK).
+  /// Also removes the token id stored on the user doc if present.
+  Future<void> deleteOwnedPurchaseTokens(String uid) async {
+    try {
+      final userSnap = await _firestore.collection('users').doc(uid).get();
+      final tokenOnUser = userSnap.data()?['purchaseToken'] as String?;
+      if (tokenOnUser != null && tokenOnUser.isNotEmpty) {
+        final ref = _firestore.collection('purchase_tokens').doc(tokenOnUser);
+        final snap = await ref.get();
+        if (snap.exists) {
+          final owner = snap.data()?['userId'];
+          if (owner == uid) {
+            await ref.delete();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('deleteOwnedPurchaseTokens (user field) warning: $e');
+    }
+
+    try {
+      await _deleteQueryInBatches(
+        _firestore.collection('purchase_tokens').where('userId', isEqualTo: uid),
+      );
+      debugPrint('Deleted owned purchase_tokens for $uid');
+    } catch (e) {
+      debugPrint('deleteOwnedPurchaseTokens (query) warning: $e');
+      rethrow;
+    }
+  }
+
+  /// Deletes problem_reports filed by [uid].
+  Future<void> deleteOwnedProblemReports(String uid) async {
+    try {
+      await _deleteQueryInBatches(
+        _firestore.collection('problem_reports').where('userId', isEqualTo: uid),
+      );
+      debugPrint('Deleted owned problem_reports for $uid');
+    } catch (e) {
+      debugPrint('deleteOwnedProblemReports warning: $e');
+      rethrow;
     }
   }
 }

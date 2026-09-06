@@ -31,14 +31,17 @@ class ChatRepository {
   }
 
   Future<void> clearAllMessages(String userId) async {
-    final snapshot = await getChatCollection(userId).get();
-    final batch = _firestore.batch();
-    
-    for (var doc in snapshot.docs) {
-      batch.delete(doc.reference);
+    const pageSize = 200;
+    while (true) {
+      final snapshot = await getChatCollection(userId).limit(pageSize).get();
+      if (snapshot.docs.isEmpty) break;
+      final batch = _firestore.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      if (snapshot.docs.length < pageSize) break;
     }
-    
-    await batch.commit();
   }
 
 }

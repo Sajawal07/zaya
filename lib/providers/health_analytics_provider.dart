@@ -100,9 +100,9 @@ final healthAnalyticsProvider = Provider<HealthAnalytics>((ref) {
   bool hasDietData = history.any((e) => e.dietScore > 0);
   bool hasStressData = history.any((e) => e.stressLevel > 0);
   bool hasSleepData = history.any((e) => e.sleepQuality > 0);
-  bool hasActivityData = history.any((e) => (e.steps ?? 0) > 0 || (e.workoutMinutes ?? 0) > 0);
+  bool hasActivityData = history.any((e) => e.steps > 0 || e.workoutMinutes > 0);
   bool hasSymptomData = history.any((e) => e.crampsLevel > 0 || e.moodSwingLevel > 0 || e.bloating || e.acne || e.hairThinning || e.facialHair);
-  bool hasCycleData = history.any((e) => (e.flowIntensity?.isNotEmpty ?? false));
+  bool hasCycleData = history.any((e) => e.flowIntensity.isNotEmpty);
 
   // Wellness Matrix Calculations - only calculate for categories with data
   double avgDiet = hasDietData 
@@ -115,10 +115,10 @@ final healthAnalyticsProvider = Provider<HealthAnalytics>((ref) {
       ? history.where((e) => e.sleepQuality > 0).map((e) => e.sleepQuality.toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => e.sleepQuality > 0).length
       : 0;
   double avgSteps = hasActivityData
-      ? history.where((e) => (e.steps ?? 0) > 0).map((e) => (e.steps ?? 0).toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => (e.steps ?? 0) > 0).length
+      ? history.where((e) => e.steps > 0).map((e) => e.steps.toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => e.steps > 0).length
       : 0;
   double avgWorkout = hasActivityData
-      ? history.where((e) => (e.workoutMinutes ?? 0) > 0).map((e) => (e.workoutMinutes ?? 0).toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => (e.workoutMinutes ?? 0) > 0).length
+      ? history.where((e) => e.workoutMinutes > 0).map((e) => e.workoutMinutes.toDouble()).fold(0.0, (a, b) => a + b) / history.where((e) => e.workoutMinutes > 0).length
       : 0;
   double avgSymptomRaw = hasSymptomData
       ? (crampsTrend.where((e) => e > 0).fold(0.0, (a, b) => a + b) / crampsTrend.where((e) => e > 0).length) + 

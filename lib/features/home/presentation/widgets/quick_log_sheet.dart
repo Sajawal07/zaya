@@ -99,8 +99,6 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
       return const SizedBox(height: 200, child: AppLoaderCentered());
     }
 
-    final bool isAlreadyLogged = existingLog != null;
-
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.oldLace,
@@ -368,16 +366,15 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                 ElevatedButton(
                   onPressed: () async {
                     await _saveLog();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Saved! Your data will help personalize insights.'),
-                          backgroundColor: AppColors.fertileGreen,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      Navigator.pop(context);
-                    }
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Saved! Your data will help personalize insights.'),
+                        backgroundColor: AppColors.fertileGreen,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.nudeRose,
@@ -480,10 +477,9 @@ class _QuickLogSheetState extends ConsumerState<QuickLogSheet> {
                 }
                 await CycleUpdateHandler.onCycleDataChanged(ref, user.uid);
               }
-              if (mounted) {
-                Navigator.pop(context); // Pop dialog
-                Navigator.pop(context); // Pop sheet
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context); // Pop dialog
+              Navigator.pop(context); // Pop sheet
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),

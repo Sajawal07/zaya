@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hercycle_bloom/core/app_colors.dart';
 import 'package:hercycle_bloom/providers/auth_provider.dart';
-import 'package:hercycle_bloom/providers/database_provider.dart';
-import 'package:hercycle_bloom/providers/cycle_provider.dart';
-import 'package:hercycle_bloom/providers/metrics_provider.dart';
+import 'package:hercycle_bloom/services/account_lifecycle_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hercycle_bloom/features/auth/presentation/screens/login_screen.dart';
@@ -720,18 +718,23 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     setState(() => _deleting = true);
 
     try {
-      final db = ref.read(databaseServiceProvider);
       final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      await db.clearAllData();
-      ref.invalidate(cycleDataProvider);
-      ref.invalidate(userMetricsProvider);
-
-      await user.delete();
+      if (user == null) {
+        if (mounted) {
+          setState(() => _deleting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You must be signed in to delete your account.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
 
       final authService = ref.read(authServiceProvider);
-      await authService.signOut();
+      final lifecycle = ref.read(accountLifecycleServiceProvider);
+      await lifecycle.deleteAccount(authService);
 
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -739,13 +742,49 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
           (route) => false,
         );
       }
-    } catch (e) {
+    } on AccountLifecycleException catch (e) {
+      debugPrint('Delete account lifecycle error: $e');
       if (mounted) {
         setState(() => _deleting = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
+            content: Text(e.message),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Delete account auth error: ${e.code} ${e.message}');
+      if (mounted) {
+        setState(() => _deleting = false);
+        final msg = e.code == 'requires-recent-login' ||
+                e.code == 'reauth-cancelled' ||
+                e.code == 'user-mismatch' ||
+                e.code == 'missing-google-token'
+            ? (e.message ??
+                'Please confirm with your Google account (${FirebaseAuth.instance.currentUser?.email ?? 'the same account'}) and tap Delete Account again.')
+            : 'Failed to delete account (${e.code}). Please try again.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Delete account failed: $e');
+      if (mounted) {
+        setState(() => _deleting = false);
+        final raw = e.toString();
+        final needsReauth = raw.contains('requires-recent-login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(
-              'Failed to delete account. If you recently signed in, please sign out and back in first.\n\nError: $e',
+              needsReauth
+                  ? 'Google needs a fresh confirmation. Tap Delete Account again and complete the Google sign-in prompt.'
+                  : 'Failed to delete account. Please try again.\n$e',
             ),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 6),
@@ -798,7 +837,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Deleting your account will permanently erase all your cycle logs, health metrics, pregnancy data, and account information. This cannot be undone.',
+                          'Deleting your account permanently erases your cycle logs, health data, pregnancy data, AI chats, Premium entitlement on this account, and your Firebase login. You will be asked to confirm with Google first. This cannot be undone.',
                           style: GoogleFonts.montserrat(
                               fontSize: 13, height: 1.5, color: AppColors.textPrimary),
                         ),
@@ -836,6 +875,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   _DeletionItem('Body metrics and BMI history'),
                   _DeletionItem('Pregnancy tracking data'),
                   _DeletionItem('AI coach conversations (Premium)'),
+                  _DeletionItem('Premium entitlement for this account'),
                   _DeletionItem('Account profile and preferences'),
                 ],
               ),

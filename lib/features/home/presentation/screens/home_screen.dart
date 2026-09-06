@@ -48,9 +48,7 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildCycleView(BuildContext context, WidgetRef ref, CycleInfo info) {
     final int currentDay = info.currentDay;
-    const int cycleLength = 28;
     final String phase = info.phase;
-    const bool isPregnancyMode = false;
     
     return Scaffold(
       backgroundColor: AppColors.oldLace,
@@ -434,75 +432,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHomeAdBanner(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.nudeRose.withValues(alpha: 0.05),
-            AppColors.pregnancyGold.withValues(alpha: 0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.pregnancyGold.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.pregnancyGold.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  'AD',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.pregnancyGold,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              const Icon(Icons.close, size: 16, color: AppColors.textSecondary),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Enjoying HerCycle Bloom? Go Premium for an ad-free experience, unlimited AI coaching, and deep cycle analytics.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-              );
-            },
-            child: const Text(
-              'Remove Ads & Unlock All Features',
-              style: TextStyle(
-                color: AppColors.nudeRose,
-                fontWeight: FontWeight.bold,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

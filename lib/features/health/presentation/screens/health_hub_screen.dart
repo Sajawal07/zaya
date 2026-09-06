@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hercycle_bloom/core/app_colors.dart';
-import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
-import 'package:hercycle_bloom/providers/premium_provider.dart';
 import 'daily_log_screen.dart';
 import 'health_conditions_screen.dart';
 import 'lab_reports_screen.dart';
@@ -14,21 +12,8 @@ import 'physical_metrics_screen.dart';
 class HealthHubScreen extends ConsumerWidget {
   const HealthHubScreen({super.key});
 
-  void _openOrPaywall(BuildContext context, bool isPremium, Widget screen) {
-    if (isPremium) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-      return;
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isPremium = ref.watch(isPremiumProvider);
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -60,7 +45,6 @@ class HealthHubScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // ── Free ──
                   _HubCard(
                     title: 'Daily Wellness Log',
                     subtitle: 'Track symptoms, mood, and lifestyle',
@@ -108,35 +92,25 @@ class HealthHubScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // ── Premium ──
                   _HubCard(
                     title: 'Hormonal Profile',
-                    subtitle: isPremium
-                        ? 'Analyze symptoms and get guidance'
-                        : 'Premium — deep PCOS / hormone analysis',
+                    subtitle: 'Analyze symptoms and get guidance',
                     icon: Icons.waves_rounded,
                     color: const Color(0xFF9C59D1),
-                    isPremiumLocked: !isPremium,
-                    onTap: () => _openOrPaywall(
+                    onTap: () => Navigator.push(
                       context,
-                      isPremium,
-                      const PcosAnalysisScreen(),
+                      MaterialPageRoute(builder: (_) => const PcosAnalysisScreen()),
                     ),
                   ),
                   const SizedBox(height: 16),
                   _HubCard(
                     title: 'Lab & Medical Reports',
-                    subtitle: isPremium
-                        ? 'Blood work and test results'
-                        : 'Premium — store & review lab reports',
+                    subtitle: 'Blood work and test results',
                     icon: Icons.biotech_outlined,
                     color: const Color(0xFF5C6BC0),
-                    isPremiumLocked: !isPremium,
-                    onTap: () => _openOrPaywall(
+                    onTap: () => Navigator.push(
                       context,
-                      isPremium,
-                      const LabReportsScreen(),
+                      MaterialPageRoute(builder: (_) => const LabReportsScreen()),
                     ),
                   ),
                 ]),
@@ -211,11 +185,6 @@ class _HubCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (isPremiumLocked) ...[
-                        const SizedBox(width: 8),
-                        const Icon(Icons.lock_rounded,
-                            size: 14, color: AppColors.pregnancyGold),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -230,13 +199,9 @@ class _HubCard extends StatelessWidget {
               ),
             ),
             Icon(
-              isPremiumLocked
-                  ? Icons.workspace_premium_rounded
-                  : Icons.arrow_forward_ios_rounded,
+              Icons.arrow_forward_ios_rounded,
               size: 16,
-              color: isPremiumLocked
-                  ? AppColors.pregnancyGold
-                  : color.withValues(alpha: 0.5),
+              color: color.withValues(alpha: 0.5),
             ),
           ],
         ),

@@ -4,16 +4,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hercycle_bloom/core/app_colors.dart';
 import 'package:hercycle_bloom/features/auth/presentation/screens/login_screen.dart';
+import 'package:hercycle_bloom/features/home/presentation/screens/main_layout.dart';
 import 'package:hercycle_bloom/providers/auth_provider.dart';
 import 'package:hercycle_bloom/providers/metrics_provider.dart';
 import 'package:hercycle_bloom/providers/cycle_provider.dart';
 import 'package:hercycle_bloom/providers/health_analytics_provider.dart';
 import 'package:hercycle_bloom/providers/pregnancy_provider.dart';
 import 'package:hercycle_bloom/providers/premium_provider.dart';
-import 'package:hercycle_bloom/providers/billing_provider.dart';
 import 'package:hercycle_bloom/providers/database_provider.dart';
 import 'package:hercycle_bloom/providers/user_settings_provider.dart';
 import 'package:hercycle_bloom/providers/wellness_provider.dart';
+import 'package:hercycle_bloom/providers/nutrition_provider.dart';
+import 'package:hercycle_bloom/providers/pcos_provider.dart';
+import 'package:hercycle_bloom/providers/ai_provider.dart';
+import 'package:hercycle_bloom/services/account_lifecycle_service.dart';
 import 'package:hercycle_bloom/features/health/presentation/screens/pcos_analysis_screen.dart';
 import 'package:hercycle_bloom/models/user_metrics.dart';
 import 'package:intl/intl.dart';
@@ -27,7 +31,6 @@ import 'how_to_use_screen.dart';
 import 'faqs_screen.dart';
 import 'legal_screens.dart';
 import 'support_screens.dart';
-import 'premium_paywall_screen.dart';
 import '../widgets/metric_bottom_sheet.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -172,7 +175,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(isFullReset ? 'Start Fresh?' : 'Reset Recent Data?'),
         content: Text(isFullReset
-            ? 'This will permanently delete ALL your cycle history and body metrics. This cannot be undone.'
+            ? 'This will permanently delete ALL your cycle history, health logs, and body metrics for this account. Your Google login and Premium access will remain. This cannot be undone.'
             : 'This will undo your most recent logs (last 7 days). Your older history and metrics will remain intact.'),
         actions: [
           TextButton(
@@ -180,22 +183,67 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              final db = ref.read(databaseServiceProvider);
-              if (isFullReset) {
-                await db.clearAllData();
-              } else {
-                await db.deleteLogsAfter(
-                    DateTime.now().subtract(const Duration(days: 7)));
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) {
+                if (ctx.mounted) Navigator.pop(ctx);
+                return;
               }
-              ref.invalidate(cycleDataProvider);
-              ref.invalidate(userMetricsProvider);
+
+              // Close dialog first so we can show progress / errors on the screen.
               if (ctx.mounted) Navigator.pop(ctx);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(isFullReset
-                      ? 'All data cleared'
-                      : 'Recent logs reverted'),
-                ));
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(
+                  child: CircularProgressIndicator(color: AppColors.nudeRose),
+                ),
+              );
+
+              try {
+                final lifecycle = ref.read(accountLifecycleServiceProvider);
+                if (isFullReset) {
+                  await lifecycle.startFresh(user.uid);
+                } else {
+                  await lifecycle.resetRecentData(user.uid);
+                }
+
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pop(); // progress
+                  if (isFullReset) {
+                    // Fresh-install experience while staying signed in + Premium.
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => const MainLayout(),
+                      ),
+                      (route) => false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                        'All health data cleared. Set up your profile to begin again. Premium is unchanged.',
+                      ),
+                      duration: Duration(seconds: 5),
+                    ));
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Recent logs reverted'),
+                    ));
+                  }
+                }
+              } catch (e) {
+                debugPrint('Reset/StartFresh failed: $e');
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pop(); // progress
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(
+                      isFullReset
+                          ? 'Could not start fresh. Please try again.\n$e'
+                          : 'Could not reset recent data. Please try again.\n$e',
+                    ),
+                    backgroundColor: AppColors.error,
+                    duration: const Duration(seconds: 5),
+                  ));
+                }
               }
             },
             child: Text(
@@ -244,17 +292,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                 child: _UserHeaderCard(user: user),
-              ),
-            ),
-
-            // ── Premium CTA ──────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                child: Consumer(builder: (ctx, ref, _) {
-                  final isPremium = ref.watch(isPremiumProvider);
-                  return _PremiumCard(isPremium: isPremium);
-                }),
               ),
             ),
 
@@ -335,31 +372,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   _Divider(),
-                  _ProfileTile(
-                    icon: Icons.workspace_premium_rounded,
-                    iconColor: AppColors.pregnancyGold,
-                    title: 'Subscription / Premium',
-                    subtitle: 'View or upgrade your plan',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-                    ),
-                  ),
-                  _Divider(),
-                  _ProfileTile(
-                    icon: Icons.restore_rounded,
-                    iconColor: AppColors.mistySage,
-                    title: 'Restore Purchases',
-                    subtitle: 'Recover a previous Premium subscription',
-                    onTap: () {
-                      ref.read(billingProvider.notifier).restorePurchases();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Checking for previous purchases…'),
-                        ),
-                      );
-                    },
-                  ),
                 ]),
               ),
             ),
@@ -383,7 +395,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ),
-
 
             // ── Pregnancy History ─────────────────────────────────────────────
             SliverToBoxAdapter(
@@ -667,7 +678,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     icon: Icons.delete_sweep_outlined,
                     iconColor: AppColors.error,
                     title: 'Start Fresh',
-                    subtitle: 'Delete all cycle and body metrics data',
+                    subtitle: 'Erase all health data; keep login & Premium',
                     onTap: () => _showResetPrompt(context, true),
                   ),
                   _Divider(),
@@ -695,18 +706,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     final authService = ref.read(authServiceProvider);
                     try {
                       await authService.signOut();
-                      
+
                       // Invalidate all user-specific providers to clear in-memory state
                       ref.invalidate(userMetricsProvider);
                       ref.invalidate(wellnessProvider);
+                      ref.invalidate(nutritionProvider);
                       ref.invalidate(cycleDataProvider);
                       ref.invalidate(healthAnalyticsProvider);
-                      ref.invalidate(billingProvider);
                       ref.invalidate(databaseServiceProvider);
                       ref.invalidate(isPremiumProvider);
+                      ref.invalidate(remotePremiumFlagProvider);
                       ref.invalidate(pregnancyModeProvider);
-                      ref.invalidate(billingProvider);
-                      
+                      ref.invalidate(activePregnancyProvider);
+                      ref.invalidate(pregnancyHistoryProvider);
+                      ref.invalidate(pcosProvider);
+                      ref.invalidate(chatMessagesProvider);
+
                       if (!context.mounted) return;
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -774,59 +789,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       builder: (_) => MetricBottomSheet(initialMetrics: metrics),
     );
   }
-
-  Widget _buildIncompleteMetricsCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.nudeRose.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.nudeRose.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.analytics_outlined, color: AppColors.nudeRose, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            'Complete Your Health Profile',
-            style: GoogleFonts.montserrat(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add your age, height, and activity level to unlock personalized health insights, BMR, and nutrition targets.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.montserrat(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.nudeRose,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: Text(
-              'Update Metrics',
-              style: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ─── Sub-Widgets ──────────────────────────────────────────────────────────────
@@ -886,119 +848,6 @@ class _UserHeaderCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PremiumCard extends StatelessWidget {
-  final bool isPremium;
-  const _PremiumCard({required this.isPremium});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isPremium) {
-      return GestureDetector(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.pregnancyGold, Color(0xFFFFD27F)],
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.pregnancyGold.withValues(alpha: 0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.workspace_premium_rounded,
-                  color: Colors.white, size: 30),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Premium Member',
-                        style: GoogleFonts.montserrat(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
-                    Text('All features unlocked',
-                        style: GoogleFonts.montserrat(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 12)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: Colors.white),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-              color: AppColors.pregnancyGold.withValues(alpha: 0.5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.pregnancyGold.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Icon(Icons.star_rounded,
-                  color: AppColors.pregnancyGold, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Upgrade to Premium',
-                      style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: AppColors.textPrimary)),
-                  const SizedBox(height: 2),
-                  Text('Unlock AI coach, deep insights & more',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 12, color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.pregnancyGold),
-          ],
-        ),
       ),
     );
   }
@@ -1121,232 +970,4 @@ class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       const Divider(height: 1, indent: 70, endIndent: 18);
-}
-
-
-
-class _BodyMetricsCard extends StatelessWidget {
-  final UserMetrics metrics;
-  const _BodyMetricsCard({required this.metrics});
-
-  double _calculateBmr() {
-    // Mifflin-St Jeor for Women
-    return (10 * (metrics.weight ?? 0)) +
-           (6.25 * (metrics.height ?? 0)) -
-           (5 * (metrics.age ?? 0)) - 161;
-  }
-
-  double _calculateDailyCalories(double bmr) {
-    double multiplier = 1.2;
-    switch (metrics.activityLevel) {
-      case 'Light': multiplier = 1.375; break;
-      case 'Moderate': multiplier = 1.55; break;
-      case 'Active': multiplier = 1.725; break;
-    }
-    return bmr * multiplier;
-  }
-
-  String _getWeightGainAdvice() {
-    final bmi = metrics.bmi;
-    if (bmi < 18.5) return "Underweight: Target 12.5–18 kg total gain.";
-    if (bmi < 25) return "Healthy: Target 11.5–16 kg total gain.";
-    if (bmi < 30) return "Overweight: Target 7–11.5 kg total gain.";
-    return "Obese: Target 5–9 kg total gain.";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bmi = metrics.bmi;
-    final bmr = _calculateBmr();
-    final calories = _calculateDailyCalories(bmr);
-    
-    Color color;
-    String category;
-    if (bmi < 18.5) { color = Colors.blue; category = 'Underweight'; }
-    else if (bmi < 25) { color = AppColors.fertileGreen; category = 'Healthy'; }
-    else if (bmi < 30) { color = Colors.orange; category = 'Overweight'; }
-    else { color = AppColors.periodRed; category = 'Obese'; }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Body Metrics',
-                style: GoogleFonts.montserrat(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  category,
-                  style: GoogleFonts.montserrat(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          _MetricDataRow(
-            icon: Icons.calculate_outlined,
-            label: 'BMI Score',
-            value: bmi.toStringAsFixed(1),
-            color: color,
-          ),
-          const SizedBox(height: 12),
-          _MetricDataRow(
-            icon: Icons.bolt_rounded,
-            label: 'Basal Metabolic Rate (BMR)',
-            value: '${bmr.round()} kcal/day',
-            color: AppColors.nudeRose,
-          ),
-          const SizedBox(height: 12),
-          _MetricDataRow(
-            icon: Icons.restaurant_menu_rounded,
-            label: 'Daily Calorie Needs',
-            value: '${calories.round()} kcal',
-            color: Colors.deepOrangeAccent,
-          ),
-          
-          if (metrics.isPregnant) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(height: 1),
-            ),
-            Row(
-              children: [
-                const Icon(Icons.info_outline_rounded, color: AppColors.pregnancyGold, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'Pregnancy Guidance',
-                  style: GoogleFonts.montserrat(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _getWeightGainAdvice(),
-              style: GoogleFonts.montserrat(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-          ],
-          
-          const SizedBox(height: 16),
-          _HealthInsightTip(bmi: bmi),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricDataRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _MetricDataRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.montserrat(
-            fontSize: 15,
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HealthInsightTip extends StatelessWidget {
-  final double bmi;
-  const _HealthInsightTip({required this.bmi});
-
-  @override
-  Widget build(BuildContext context) {
-    String tip;
-    if (bmi < 18.5) tip = "Focus on nutrient-dense foods to support hormonal levels.";
-    else if (bmi < 25) tip = "Maintain your current lifestyle to stay in peak health.";
-    else if (bmi < 30) tip = "Weight management can significantly improve PCOS symptoms.";
-    else tip = "Consider consulting a nutritionist for insulin-resistance management.";
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.mistySage.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        tip,
-        style: GoogleFonts.montserrat(
-          fontSize: 12,
-          fontStyle: FontStyle.italic,
-          color: AppColors.textPrimary,
-        ),
-      ),
-    );
-  }
 }

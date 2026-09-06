@@ -210,8 +210,11 @@ class RadarChartPainter extends CustomPainter {
         center.dx + radius * idealValue * math.cos(angle),
         center.dy + radius * idealValue * math.sin(angle),
       );
-      if (i == 0) idealPath.moveTo(pt.dx, pt.dy);
-      else idealPath.lineTo(pt.dx, pt.dy);
+      if (i == 0) {
+        idealPath.moveTo(pt.dx, pt.dy);
+      } else {
+        idealPath.lineTo(pt.dx, pt.dy);
+      }
     }
     idealPath.close();
     canvas.drawPath(idealPath, idealFill);
@@ -224,8 +227,11 @@ class RadarChartPainter extends CustomPainter {
         center.dx + radius * values[i] * math.cos(angle),
         center.dy + radius * values[i] * math.sin(angle),
       );
-      if (i == 0) dataPath.moveTo(pt.dx, pt.dy);
-      else dataPath.lineTo(pt.dx, pt.dy);
+      if (i == 0) {
+        dataPath.moveTo(pt.dx, pt.dy);
+      } else {
+        dataPath.lineTo(pt.dx, pt.dy);
+      }
     }
     dataPath.close();
     canvas.drawPath(dataPath, dataFill);

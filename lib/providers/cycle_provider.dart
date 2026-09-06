@@ -4,6 +4,7 @@ import 'database_provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
 import '../services/firestore_sync_service.dart';
+import '../services/account_lifecycle_service.dart';
 import '../core/cycle_math.dart';
 
 import 'auth_provider.dart';
@@ -31,30 +32,54 @@ final cycleDataProvider = FutureProvider<CycleInfo>((ref) async {
   var metrics = await db.getUserMetrics(user.uid);
   var allLogs = await db.getAllLogs(user.uid);
 
-  // If local Isar is empty, try loading from Firestore (after reinstall)
+  // If local Isar is empty, try loading from Firestore (after reinstall).
+  // Skip when the user intentionally cleared data (Start Fresh / wipe).
   if (allLogs.isEmpty || metrics?.lastPeriodDate == null) {
-    try {
-      final firestoreService = FirestoreSyncService();
+    await AccountLifecycleService.ensureEpochLoaded(user.uid);
+    final epochAtStart = AccountLifecycleService.currentDataEpoch(user.uid);
+    final hydrateBlocked =
+        await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid);
+    if (!hydrateBlocked) {
+      try {
+        final firestoreService = FirestoreSyncService();
 
-      final remoteLogs = await firestoreService.loadCycleLogsFromFirestore(user.uid);
-      if (remoteLogs.isNotEmpty) {
-        for (final log in remoteLogs) {
-          await db.saveCycleLog(log);
+        final remoteLogs =
+            await firestoreService.loadCycleLogsFromFirestore(user.uid);
+        // Abort if Start Fresh / Delete wiped while we were awaiting.
+        if (AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) ||
+            await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+          debugPrint('Skipped Firestore cycle hydrate (wipe in progress)');
+        } else if (remoteLogs.isNotEmpty) {
+          for (final log in remoteLogs) {
+            if (AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) ||
+                await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+              debugPrint('Aborted mid-hydrate cycle write (wipe)');
+              allLogs = await db.getAllLogs(user.uid);
+              break;
+            }
+            await db.saveCycleLog(log);
+          }
+          allLogs = await db.getAllLogs(user.uid);
+          debugPrint('Restored ${remoteLogs.length} cycle logs from Firestore');
         }
-        allLogs = await db.getAllLogs(user.uid);
-        debugPrint('Restored ${remoteLogs.length} cycle logs from Firestore');
-      }
 
-      if (metrics == null || metrics.lastPeriodDate == null) {
-        final remoteMetrics = await firestoreService.loadUserMetricsFromFirestore(user.uid);
-        if (remoteMetrics != null) {
-          await db.saveUserMetrics(remoteMetrics);
-          metrics = remoteMetrics;
-          debugPrint('Restored user metrics from Firestore');
+        if (metrics == null || metrics.lastPeriodDate == null) {
+          if (!AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) &&
+              !await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+            final remoteMetrics =
+                await firestoreService.loadUserMetricsFromFirestore(user.uid);
+            if (remoteMetrics != null &&
+                !AccountLifecycleService.isStaleHydrate(user.uid, epochAtStart) &&
+                !await AccountLifecycleService.isFirestoreHydrateBlocked(user.uid)) {
+              await db.saveUserMetrics(remoteMetrics);
+              metrics = remoteMetrics;
+              debugPrint('Restored user metrics from Firestore');
+            }
+          }
         }
+      } catch (e) {
+        debugPrint('Error loading from Firestore: $e');
       }
-    } catch (e) {
-      debugPrint('Error loading from Firestore: $e');
     }
   }
 

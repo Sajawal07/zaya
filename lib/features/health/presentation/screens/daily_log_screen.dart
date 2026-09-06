@@ -765,10 +765,9 @@ class _DailyLogScreenState extends ConsumerState<DailyLogScreen> {
                   await CycleUpdateHandler.onCycleDataChanged(ref, user.uid);
                 }
               }
-              if (mounted) {
-                Navigator.pop(context);
-                Navigator.pop(context);
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),
           ),

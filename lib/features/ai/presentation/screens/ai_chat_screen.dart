@@ -11,7 +11,6 @@ import '../../../../providers/metrics_provider.dart';
 import '../../../../services/ai_service.dart';
 import '../../domain/models/chat_message.dart';
 import 'package:hercycle_bloom/providers/premium_provider.dart';
-import 'package:hercycle_bloom/features/profile/presentation/screens/premium_paywall_screen.dart';
 import 'package:hercycle_bloom/shared/widgets/app_loader.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
@@ -116,7 +115,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   Text(
                     isLimitReached
                         ? 'Daily limit reached'
-                        : '$remaining of $dailyLimit questions left today',
+                        : '$remaining of $dailyLimit messages left today',
                     style: TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary.withValues(alpha: 0.9),
@@ -529,34 +528,10 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isPremium
-                ? "You've used all $limit Premium AI questions for today. Come back tomorrow for more."
-                : 'Free users get ${PremiumLimits.freeAiMessagesPerDay} AI questions per day (including hi / hello). Upgrade to Premium for ${PremiumLimits.premiumAiMessagesPerDay} questions/day plus advanced insights.',
+            "You've used all $limit AI messages for today. Come back tomorrow for more.",
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
           ),
-          if (!isPremium) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PremiumPaywallScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.nudeRose,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                ),
-                child: const Text('Upgrade to Premium'),
-              ),
-            ),
-          ],
         ],
       ),
     );
