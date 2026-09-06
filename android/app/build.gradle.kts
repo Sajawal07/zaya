@@ -55,6 +55,7 @@ android {
             storeFile = file(storeFilePath)
             storePassword = keystoreProperties["storePassword"] as String?
                 ?: error("'storePassword' not set in key.properties.")
+            storeType = "PKCS12"
         }
     }
 
